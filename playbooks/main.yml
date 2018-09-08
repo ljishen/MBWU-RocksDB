@@ -37,7 +37,13 @@
           - libzstd-dev
           - oracle-java8-installer
         state: present
-        update_cache: yes
+    - name: download Apache Maven
+      unarchive:
+        creates: "{{ maven_dir }}"
+        dest: "{{ workdir }}"
+        keep_newer: no
+        remote_src: yes
+        src: http://mirrors.sorengard.com/apache/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz
     - name: build RocksJava
       command: >
         JAVA_HOME=/usr/lib/jvm/java-8-oracle make -j{{ ansible_processor_vcpus - 1 }} rocksdbjavastatic
@@ -85,13 +91,6 @@
         path: "{{ ycsb_dir }}/pom.xml"
         regexp: '(^\\s+<rocksdb\.version>)[\\d.]+(</rocksdb\.version>$)'
         state: present
-    - name: download Apache Maven
-      unarchive:
-        creates: "{{ maven_dir }}"
-        dest: "{{ workdir }}"
-        keep_newer: no
-        remote_src: yes
-        src: http://mirrors.sorengard.com/apache/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz
     - name: build RocksDB YCSB binding
       command: >
         {{ maven_dir }}/bin/mvn -pl com.yahoo.ycsb:rocksdb-binding -am clean package
