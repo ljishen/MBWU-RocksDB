@@ -1,5 +1,5 @@
 ---
-- host: all
+- hosts: all
   any_errors_fatal: true
   vars:
     rocksdb_dir: "{{ workdir }}/rocksdb-{{ rocksdb_version }}"
@@ -9,6 +9,10 @@
     ycsb_dir: "{{ workdir }}/YCSB"
     maven_dir: "{{ workdir }}/apache-maven-{{ maven_version }}"
   tasks:
+    - name: ensure the presence of {{ workdir }}
+      file:
+        path: "{{ workdir }}"
+        state: directory
     - name: download RocksDB source code
       unarchive:
         creates: "{{ rocksdb_dir }}"
@@ -16,12 +20,27 @@
         keep_newer: no
         remote_src: yes
         src: https://codeload.github.com/facebook/rocksdb/tar.gz/v{{ rocksdb_version }}
-    - name: add WebUpd8 Oracle Java PPA
+    - name: check if JDK installed
+      command: javac -version
+      register: comm_res
+      changed_when: "comm_res.rc != 0"
+    - block:
+        - name: add WebUpd8 Oracle Java PPA
+          apt_repository:
+            repo: ppa:webupd8team/java
+            state: present
+            update_cache: yes
+        - name: auto accept Oracle license
+          shell: >
+            echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
+        - name: install JDK 8
+          apt:
+            install_recommends: no
+            name:
+              - oracle-java8-installer
+            state: present
       become: yes
-      apt_repository:
-        repo: ppa:webupd8team/java
-        state: present
-        update_cache: yes
+      when: comm_res.rc != 0
     - name: install dependent apt packages
       become: yes
       apt:
@@ -35,8 +54,8 @@
           - libbz2-dev
           - liblz4-dev
           - libzstd-dev
-          - oracle-java8-installer
         state: present
+        update_cache: yes
     - name: download Apache Maven
       unarchive:
         creates: "{{ maven_dir }}"
@@ -46,7 +65,7 @@
         src: http://mirrors.sorengard.com/apache/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz
     - name: build RocksJava
       command: >
-        JAVA_HOME=/usr/lib/jvm/java-8-oracle make -j{{ ansible_processor_vcpus - 1 }} rocksdbjavastatic
+        make JAVA_HOME=/usr/lib/jvm/java-8-oracle -j{{ ansible_processor_vcpus - 1 }} rocksdbjavastatic
       args:
         chdir: "{{ rocksdb_dir }}"
         creates: "{{ rocksdbjni_src }}"
@@ -83,6 +102,7 @@
         force: yes
         repo: https://github.com/ljishen/YCSB.git
         update: yes
+        version: "{{ ycsb_version }}"
     - name: update RocksDB version in YCSB
       lineinfile:
         backrefs: yes
