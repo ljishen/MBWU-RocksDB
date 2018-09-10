@@ -55,13 +55,11 @@
       - libzstd-dev
     state: present
     update_cache: yes
-- name: download Apache Maven
-  unarchive:
-    creates: "{{ maven_dir }}"
-    dest: "{{ workdir }}"
-    keep_newer: no
-    remote_src: yes
-    src: http://mirrors.sorengard.com/apache/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz
+- name: patch rocksdb-{{ rocksdb_version }}
+  shell: patch < {{ role_path }}/files/rocksdb-{{ rocksdb_version }}.patch
+  args:
+    chdir: "{{ rocksdb_dir }}"
+    removes: "{{ role_path }}/files/rocksdb-{{ rocksdb_version }}.patch"
 - name: build RocksJava
   command: >
     make JAVA_HOME={{ java_home }} -j{{ ansible_processor_vcpus - 2 }} rocksdbjavastatic
@@ -92,6 +90,13 @@
     path: "{{ rocksdbjni_dest_pom }}"
     regexp: '(^\\s+<version>)\-(</version>$)'
     state: present
+- name: download Apache Maven
+  unarchive:
+    creates: "{{ maven_dir }}"
+    dest: "{{ workdir }}"
+    keep_newer: no
+    remote_src: yes
+    src: http://mirrors.sorengard.com/apache/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz
 - name: clone YCSB
   git:
     bare: no

@@ -1,0 +1,11 @@
+--- Makefile.orig	2018-09-10 22:00:18.227123597 +0000
++++ Makefile	2018-09-10 22:01:08.042324545 +0000
+@@ -1587,7 +1587,7 @@
+ ZLIB_DOWNLOAD_BASE ?= http://zlib.net
+ BZIP2_VER ?= 1.0.6
+ BZIP2_SHA256 ?= a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd
+-BZIP2_DOWNLOAD_BASE ?= http://www.bzip.org
++BZIP2_DOWNLOAD_BASE ?= https://web.archive.org/web/20180624184835/http://www.bzip.org
+ SNAPPY_VER ?= 1.1.4
+ SNAPPY_SHA256 ?= 134bfe122fd25599bb807bb8130e7ba6d9bdb851e0b16efcb83ac4f5d0b70057
+ SNAPPY_DOWNLOAD_BASE ?= https://github.com/google/snappy/releases/download
