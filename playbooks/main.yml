@@ -23,7 +23,7 @@
     - name: check if JDK installed
       command: javac -version
       register: comm_res
-      changed_when: "comm_res.rc != 0"
+      changed_when: False
     - block:
         - name: add WebUpd8 Oracle Java PPA
           apt_repository:
@@ -41,6 +41,15 @@
             state: present
       become: yes
       when: comm_res.rc != 0
+    - name: detect JAVA_HOME
+      shell: dirname "$(dirname "$(readlink -f "$(which javac)")")"
+      register: comm_res
+      changed_when: False
+    - name: save JAVA_HOME
+      set_fact:
+        java_home: "{{ comm_res.stdout }}"
+    - name: print JAVA_HOME
+      debug: msg="JAVA_HOME={{ java_home }}"
     - name: install dependent apt packages
       become: yes
       apt:
@@ -65,7 +74,7 @@
         src: http://mirrors.sorengard.com/apache/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz
     - name: build RocksJava
       command: >
-        make JAVA_HOME=/usr/lib/jvm/java-8-oracle -j{{ ansible_processor_vcpus - 1 }} rocksdbjavastatic
+        make JAVA_HOME={{ java_home }} -j{{ ansible_processor_vcpus - 2 }} rocksdbjavastatic
       args:
         chdir: "{{ rocksdb_dir }}"
         creates: "{{ rocksdbjni_src }}"
