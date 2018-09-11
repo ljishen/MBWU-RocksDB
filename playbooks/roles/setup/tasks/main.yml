@@ -1,6 +1,8 @@
 ---
 - name: ensure the presence of {{ workdir }}
+  become: yes
   file:
+    owner: "{{ ansible_user }}"
     path: "{{ workdir }}"
     state: directory
 - name: download RocksDB source code
@@ -38,8 +40,6 @@
 - name: save JAVA_HOME
   set_fact:
     java_home: "{{ comm_res.stdout }}"
-- name: print JAVA_HOME
-  debug: msg="JAVA_HOME={{ java_home }}"
 - name: install dependent apt packages
   become: yes
   apt:
