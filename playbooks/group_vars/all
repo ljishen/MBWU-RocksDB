@@ -6,5 +6,7 @@ workdir: /tmp/ycsb-rocksdb
 
 maven_version: 3.5.4
 rocksdb_version: 5.14.3
+
+# the tag name from https://github.com/ljishen/YCSB/tags
 ycsb_version: 0.15.0
 ...

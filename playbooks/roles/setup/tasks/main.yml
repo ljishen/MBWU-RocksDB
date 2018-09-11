@@ -56,18 +56,22 @@
     state: present
     update_cache: yes
 - name: patch rocksdb-{{ rocksdb_version }}
-  shell: patch < {{ role_path }}/files/rocksdb-{{ rocksdb_version }}.patch
+  # '-N' option instructs applying patch only forwardly without trying reverse-apply
+  # '-r -' option instructs not to create rejectfile
+  shell: patch -N -r - < {{ role_path }}/files/rocksdb-{{ rocksdb_version }}.patch || true
   args:
     chdir: "{{ rocksdb_dir }}"
     removes: "{{ role_path }}/files/rocksdb-{{ rocksdb_version }}.patch"
-- name: build RocksJava
+- name: build RocksJava (may take a long time)
   command: >
     make JAVA_HOME={{ java_home }} -j{{ ansible_processor_vcpus - 2 }} rocksdbjavastatic
   args:
     chdir: "{{ rocksdb_dir }}"
     creates: "{{ rocksdbjni_src }}"
 - name: ensure the presence of rocksdbjni dir in maven repo
+  become: yes
   file:
+    owner: "{{ ansible_user }}"
     path: "{{ rocksdbjni_dest_dir }}"
     state: directory
 - name: copy rocksdbjni jar to maven repository
@@ -86,9 +90,9 @@
   lineinfile:
     backrefs: yes
     create: no
-    line: '\1{{ rocksdb_version }}\2'
+    line: '\1<version>{{ rocksdb_version }}</version>'
     path: "{{ rocksdbjni_dest_pom }}"
-    regexp: '(^\\s+<version>)\-(</version>$)'
+    regexp: '^(\s+)<version>-</version>$'
     state: present
 - name: download Apache Maven
   unarchive:
@@ -111,14 +115,14 @@
   lineinfile:
     backrefs: yes
     create: no
-    line: '\1{{ rocksdb_version }}\2'
+    line: '\1<rocksdb.version>{{ rocksdb_version }}</rocksdb.version>'
     path: "{{ ycsb_dir }}/pom.xml"
-    regexp: '(^\\s+<rocksdb\.version>)[\\d.]+(</rocksdb\.version>$)'
+    regexp: '^(\s+)<rocksdb\.version>[\d.]+</rocksdb\.version>$'
     state: present
 - name: build RocksDB YCSB binding
   command: >
     {{ maven_dir }}/bin/mvn -pl com.yahoo.ycsb:rocksdb-binding -am clean package
   args:
     chdir: "{{ ycsb_dir }}"
-    creates: "{{ ycsb_dir }}/rocksdb/target"
+    creates: "{{ ycsb_dir }}/rocksdb/target/ycsb-rocksdb-binding-{{ ycsb_version }}.tar.gz"
 ...
