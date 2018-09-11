@@ -9,4 +9,7 @@ rocksdb_version: 5.14.3
 
 # the tag name from https://github.com/ljishen/YCSB/tags
 ycsb_version: 0.15.0
+
+key_sz_bytes: 16
+value_sz_kbytes: 1
 ...

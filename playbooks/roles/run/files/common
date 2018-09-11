@@ -3,11 +3,10 @@
 
 # Since the YCSB RocksDB binding just combines all the fields into a single
 # byte array as the value. Reducing the field counts helps to free up more CPU
-# resources to the I/O path. The size of value is 1 KB.
+# resources for the I/O path.
 fieldcount=1
-fieldlength=1024
+fieldlength={{ value_sz_kbytes * 1024 }}
 
 # For example for row 5, with zeropadding=1 you get 'user5' key and with
-# zeropading=8 you get 'user00000005' key. We want to ensure the key size is
-# 16 byte.
-zeropadding=12
+# zeropading=8 you get 'user00000005' key.
+zeropadding={{ key_sz_bytes - 4 }}
