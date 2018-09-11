@@ -111,6 +111,7 @@
     repo: https://github.com/ljishen/YCSB.git
     update: yes
     version: "{{ ycsb_version }}"
+  register: git_res
 - name: update RocksDB version in YCSB
   lineinfile:
     backrefs: yes
@@ -119,10 +120,13 @@
     path: "{{ ycsb_dir }}/pom.xml"
     regexp: '^(\s+)<rocksdb\.version>[\d.]+</rocksdb\.version>$'
     state: present
+- name: check if ycsb-rocksdb-binding exists
+  stat: path="{{ ycsb_dir }}/rocksdb/target/ycsb-rocksdb-binding-{{ ycsb_version }}.tar.gz"
+  register: stat_res
 - name: build RocksDB YCSB binding
   command: >
     {{ maven_dir }}/bin/mvn -pl com.yahoo.ycsb:rocksdb-binding -am clean package
   args:
     chdir: "{{ ycsb_dir }}"
-    creates: "{{ ycsb_dir }}/rocksdb/target/ycsb-rocksdb-binding-{{ ycsb_version }}.tar.gz"
+  when: git_res.after != git_res.before or stat_res.stat.isreg is not defined
 ...
