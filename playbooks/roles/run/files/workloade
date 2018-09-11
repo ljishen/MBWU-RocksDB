@@ -43,4 +43,5 @@ maxscanlength=100
 
 scanlengthdistribution=uniform
 
-{{ included_properties }}
+
+{% include 'common' %}

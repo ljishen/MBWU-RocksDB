@@ -35,4 +35,4 @@ insertproportion=0
 requestdistribution=zipfian
 
 
-{{ included_properties }}
+{% include 'common' %}

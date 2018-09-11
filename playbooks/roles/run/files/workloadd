@@ -39,5 +39,4 @@ insertproportion=0.05
 
 requestdistribution=latest
 
-
-{{ included_properties }}
+{% include 'common' %}

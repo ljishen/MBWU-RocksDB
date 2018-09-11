@@ -36,4 +36,4 @@ readmodifywriteproportion=0.5
 requestdistribution=zipfian
 
 
-{{ included_properties }}
+{% include 'common' %}
