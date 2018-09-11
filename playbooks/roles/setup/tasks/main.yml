@@ -35,11 +35,8 @@
   when: comm_res.rc != 0
 - name: detect JAVA_HOME
   shell: dirname "$(dirname "$(readlink -f "$(which javac)")")"
-  register: comm_res
+  register: java_home_res
   changed_when: False
-- name: save JAVA_HOME
-  set_fact:
-    java_home: "{{ comm_res.stdout }}"
 - name: install dependent apt packages
   become: yes
   apt:
@@ -64,10 +61,12 @@
     removes: "{{ role_path }}/files/rocksdb-{{ rocksdb_version }}.patch"
 - name: build RocksJava (may take a long time)
   command: >
-    make JAVA_HOME={{ java_home }} -j{{ ansible_processor_vcpus - 2 }} rocksdbjavastatic
+    make -j{{ ansible_processor_vcpus - 2 }} rocksdbjavastatic
   args:
     chdir: "{{ rocksdb_dir }}"
     creates: "{{ rocksdbjni_src }}"
+  environment:
+    JAVA_HOME: '{{ java_home_res.stdout }}'
 - name: ensure the presence of rocksdbjni dir in maven repo
   become: yes
   file:
