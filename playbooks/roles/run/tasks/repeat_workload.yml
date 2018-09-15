@@ -1,0 +1,18 @@
+---
+- name: ({{ notes }}) deploy the workload parameter file
+  template:
+    backup: yes
+    dest: "{{ workloads_dir }}/workload"
+    force: yes
+    src: "{{ cur_workload }}"
+
+- set_fact:
+    outer_notes_repeat: "{{ notes }}"
+
+- include_tasks: do_run.yml
+  vars:
+    notes: "{{ outer_notes_repeat }}, round {{ cur_round }}"
+  with_sequence: count={{ maximum_rounds }}
+  loop_control:
+    loop_var: cur_round
+...

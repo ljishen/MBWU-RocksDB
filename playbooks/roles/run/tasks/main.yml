@@ -1,3 +1,8 @@
 ---
-- name:
+- include_tasks: repeat_workload.yml
+  vars:
+    notes: "{{ cur_workload }}"
+  with_items: "{{ run_workloads }}"
+  loop_control:
+    loop_var: cur_workload
 ...
