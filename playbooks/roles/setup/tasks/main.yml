@@ -120,12 +120,13 @@
     regexp: '^(\s+)<rocksdb\.version>[\d.]+</rocksdb\.version>$'
     state: present
 - name: check if ycsb-rocksdb-binding exists
-  stat: path="{{ ycsb_dir }}/rocksdb/target/ycsb-rocksdb-binding-{{ ycsb_version }}.tar.gz"
+  stat: path="{{ item }}"
+  with_fileglob: "{{ ycsb_dir }}/rocksdb/target/ycsb-rocksdb-binding-*.tar.gz"
   register: stat_res
 - name: build RocksDB YCSB binding
   command: >
     {{ maven_dir }}/bin/mvn -pl com.yahoo.ycsb:rocksdb-binding -am clean package
   args:
     chdir: "{{ ycsb_dir }}"
-  when: git_res.after != git_res.before or stat_res.stat.isreg is not defined
+  when: git_res.after != git_res.before or stat_res.stat is not defined
 ...
