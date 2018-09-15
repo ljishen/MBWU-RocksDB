@@ -5,9 +5,10 @@ ansible_ssh_private_key_file: /home/{{ ansible_user }}/keys/id_rsa
 maven_version: 3.5.4
 rocksdb_version: 5.14.3
 
-# the tag name from https://github.com/ljishen/YCSB/tags
-# only support version >= 0.15.0
-ycsb_version: 0.15.0
+# This can be the the literal string HEAD, a branch name, a tag name
+# of repo https://github.com/ljishen/YCSB.
+# Only support revision >= 386d1914c62dfa65bb6ca9772383ad4113337baa
+ycsb_version: HEAD
 
 workdir: /tmp/ycsb-rocksdb
 
@@ -15,6 +16,14 @@ workdir: /tmp/ycsb-rocksdb
 # each test. For some volatile drive which is harder to get to the steady
 # state, this number can be set to a higher number, e.g. 100.
 maximum_rounds: 25
+
+
+########## YCSB Properties ##########
+# See https://github.com/ljishen/YCSB/wiki/Core-Properties
+#     https://github.com/ljishen/YCSB/blob/master/workloads/workload_template
+
+recordcount: 1000
+operationcount: 1000
 
 key_sz_bytes: 16
 value_sz_kbytes: 1
