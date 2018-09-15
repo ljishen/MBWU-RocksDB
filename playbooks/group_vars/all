@@ -8,6 +8,7 @@ maven_version: 3.5.4
 rocksdb_version: 5.14.3
 
 # the tag name from https://github.com/ljishen/YCSB/tags
+# only support version >= 0.15.0
 ycsb_version: 0.15.0
 
 key_sz_bytes: 16
