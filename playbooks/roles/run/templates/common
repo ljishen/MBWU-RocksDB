@@ -1,8 +1,4 @@
-###############################################################################
-# Customized properties are below this line !!
-
-recordcount={{ recordcount }}
-operationcount={{ operationcount }}
+########## Common Workload Parameters ##########
 
 # Since the YCSB RocksDB binding just combines all the fields into a single
 # byte array as the value. Reducing the field counts helps to free up more CPU

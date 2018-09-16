@@ -1,10 +1,32 @@
 ---
-- name: ({{ notes }}) deploy the workload parameter file
+- name: ({{ notes }}) copy user-defined workload parameter file to {{ local_tmp_data_dir }}
+  local_action:
+    module: copy
+    backup: yes
+    dest: "{{ local_tmp_data_dir }}/"
+    force: yes
+    owner: "{{ lookup('env', 'USER') }}"
+    remote_src: no
+    src: "templates/{{ cur_workload }}"
+  when: cur_workload not in core_workloads
+
+- name: ({{ notes }}) deploy workload parameter file
   template:
     backup: yes
-    dest: "{{ workloads_dir }}/workload"
+    dest: "{{ workloads_dir }}/{{ cur_workload }}"
     force: yes
-    src: "{{ cur_workload }}"
+    owner: "{{ ansible_user }}"
+    src: "{{ local_tmp_data_dir }}/{{ cur_workload }}"
+
+- name: ({{ notes }}) append common properties to parameter file
+  blockinfile:
+    backup: no
+    block: "{{ lookup('template', 'common') }}"
+    create: no
+    insertafter: EOF
+    owner: "{{ ansible_user }}"
+    path: "{{ workloads_dir }}/{{ cur_workload }}"
+    state: present
 
 - set_fact:
     outer_notes_repeat: "{{ notes }}"

@@ -1,4 +1,21 @@
 ---
+- name: ensure the presence of local tmp data dir {{ local_tmp_data_dir }}
+  become: yes
+  local_action:
+    module: file
+    owner: "{{ lookup('env', 'USER') }}"
+    path: "{{ local_tmp_data_dir }}"
+    state: directory
+
+- name: fetch the core workload parameter files
+  fetch:
+    dest: "{{ local_tmp_data_dir }}/"
+    fail_on_missing: yes
+    flat: yes
+    src: "{{ ycsb_dir }}/workloads/{{ item }}"
+  with_items: "{{ core_workloads }}"
+  run_once: yes
+
 - include_tasks: repeat_workload.yml
   vars:
     notes: "{{ cur_workload }}"

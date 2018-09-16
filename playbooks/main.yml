@@ -3,14 +3,24 @@
   any_errors_fatal: true
   tags: [ 'always' ]
   vars:
+    core_workloads: [ 'workloada', 'workloadb', 'workloadc', 'workloadd', 'workloade', 'workloadf' ]
+    available_workloads: []
+    ycsb_dir: "{{ workdir }}/YCSB"
+    maven_dir: "{{ workdir }}/apache-maven-{{ maven_version }}"
     workloads_dir: "{{ workdir }}/workloads"
+    local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
   pre_tasks:
-    - name: search all available workload parameter files
+    - name: collect core and user-defined workloads
       set_fact:
-        available_workloads: "{{ available_workloads | default([]) + [ item | basename ] }}"
-      with_fileglob:
-        - "{{ playbook_dir }}/roles/run/templates/workload*"
-    - name: collect run workloads
+        available_workloads: >
+          {% set workload_name = item | basename -%}
+          {% if workload_name == 'common' -%}
+              {{ available_workloads + core_workloads }}
+          {% else -%}
+              {{ available_workloads + [ workload_name ] }}
+          {% endif -%}
+      with_fileglob: "{{ playbook_dir }}/roles/run/templates/*"
+    - name: get run workloads
       set_fact:
         run_workloads: "{{ ansible_run_tags | intersect(available_workloads) }}"
     - debug:
