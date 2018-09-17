@@ -7,8 +7,6 @@
     available_workloads: []
     ycsb_dir: "{{ workdir }}/YCSB"
     maven_dir: "{{ workdir }}/apache-maven-{{ maven_version }}"
-    workloads_dir: "{{ workdir }}/workloads"
-    local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
   pre_tasks:
     - name: collect core and user-defined workloads
       set_fact:
@@ -29,14 +27,9 @@
           {{ available_workloads }} to run using '--tags'
       when: run_workloads | length == 0
       failed_when: run_workloads | length == 0
-
-    - name: ensure the presence of the remote workloads dir {{ workloads_dir }}
-      become: yes
-      file:
-        owner: "{{ ansible_user }}"
-        path: "{{ workloads_dir }}"
-        state: directory
   roles:
     - setup
-    - run
+    - role: run
+      vars:
+        local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
 ...

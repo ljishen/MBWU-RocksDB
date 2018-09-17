@@ -1,4 +1,4 @@
 ---
-- name: ({{ notes }}) abcdfsd
+- name: ({{ notes }})
   debug: msg="haha"
 ...

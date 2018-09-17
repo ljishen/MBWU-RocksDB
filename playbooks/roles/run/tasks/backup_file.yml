@@ -1,0 +1,26 @@
+---
+- name: ({{ notes }}) backup local file
+  local_action:
+    module: copy
+    backup: yes
+    content: ""
+    dest: "{{ local_file }}"
+    force: yes
+    owner: "{{ lookup('env', 'USER') }}"
+  register: copy_res
+
+- name: ({{ notes }}) fetch remote file
+  fetch:
+    dest: "{{ local_file }}"
+    fail_on_missing: yes
+    flat: yes
+    src: "{{ remote_file }}"
+
+- name: ({{ notes }}) clean backup
+  shell: |
+    if cmp -s {{ copy_res.backup_file }} {{ local_file }}; then
+      rm -f {{ copy_res.backup_file }}
+    fi
+  delegate_to: localhost
+  when: copy_res.backup_file is defined
+...

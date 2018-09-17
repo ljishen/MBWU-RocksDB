@@ -1,4 +1,19 @@
 ---
+- name: ensure the presence of remote output dir {{ remote_output_dir }}
+  become: yes
+  file:
+    owner: "{{ ansible_user }}"
+    path: "{{ remote_output_dir }}"
+    state: directory
+
+- name: ensure the presence of local output dir {{ local_output_dir }}
+  become: yes
+  local_action:
+    module: file
+    owner: "{{ lookup('env', 'USER') }}"
+    path: "{{ local_output_dir }}"
+    state: directory
+
 - name: ({{ notes }}) copy user-defined workload parameter file to {{ local_tmp_data_dir }}
   local_action:
     module: copy
@@ -13,10 +28,11 @@
 - name: ({{ notes }}) deploy workload parameter file
   template:
     backup: yes
-    dest: "{{ workloads_dir }}/{{ cur_workload }}"
+    dest: "{{ remote_workload_file }}"
     force: yes
     owner: "{{ ansible_user }}"
     src: "{{ local_tmp_data_dir }}/{{ cur_workload }}"
+  register: template_res
 
 - name: ({{ notes }}) append common properties to parameter file
   blockinfile:
@@ -25,8 +41,37 @@
     create: no
     insertafter: EOF
     owner: "{{ ansible_user }}"
-    path: "{{ workloads_dir }}/{{ cur_workload }}"
+    path: "{{ remote_workload_file }}"
     state: present
+
+- name: ({{ notes }}) clean backup
+  shell: |
+    if cmp -s {{ template_res.backup_file }} {{ remote_workload_file }}; then
+      rm -f {{ template_res.backup_file }}
+    fi
+  when: template_res.backup_file is defined
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_workload_file }}"
+    remote_file: "{{ remote_workload_file }}"
+
+- name: ({{ notes }}) load the data
+  shell: >
+    bin/ycsb load rocksdb -s
+    -P {{ remote_workload_file }}
+    -p rocksdb.dir={{ mountpoint }}/{{ ycsb_data_dirname }}
+    -p options.file={{ role_path }}/files/OPTIONS
+    > {{ remote_output_file }} 2>&1
+  args:
+    chdir: "{{ ycsb_dir }}"
+  environment:
+    PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_output_file }}"
+    remote_file: "{{ remote_output_file }}"
 
 - set_fact:
     outer_notes_repeat: "{{ notes }}"
