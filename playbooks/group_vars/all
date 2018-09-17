@@ -18,12 +18,7 @@ workdir: /tmp/ycsb-rocksdb
 maximum_rounds: 25
 
 
-########## YCSB Properties ##########
-# See https://github.com/ljishen/YCSB/wiki/Core-Properties
-#     https://github.com/ljishen/YCSB/blob/master/workloads/workload_template
-
-recordcount: 1000
-operationcount: 1000
+########## RocksDB Properties ##########
 
 key_sz_bytes: 16
 value_sz_kbytes: 1
