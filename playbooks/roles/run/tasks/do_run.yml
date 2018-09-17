@@ -1,4 +1,20 @@
 ---
 - name: ({{ notes }})
   debug: msg="haha"
+
+- name: ({{ notes }}) execute the workload
+  shell: >
+    bin/ycsb run rocksdb -s
+    -P {{ remote_workload_file }}
+    -p rocksdb.dir={{ mountpoint }}/{{ ycsb_data_dirname }}
+    > {{ remote_output_file }} 2>&1
+  args:
+    chdir: "{{ ycsb_dir }}"
+  environment:
+    PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_output_file }}"
+    remote_file: "{{ remote_output_file }}"
 ...

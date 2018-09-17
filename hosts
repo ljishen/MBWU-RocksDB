@@ -4,6 +4,6 @@
 #             during the test except the current YCSB workload.
 #             This is required for each host.
 
-# 192.168.140.138   ansible_user=ljishen    mountpoint=/mnt/sda2
-# 73.162.248.180    ansible_user=ljishen    mountpoint=/mnt/sda2   ansible_port=22002
-# 192.168.86.31     ansible_user=rock64     mountpoint=/mnt/sda2
+# 192.168.140.138   ansible_user=ljishen    mountpoint=/mnt/sda1
+# 73.162.248.180    ansible_user=ljishen    mountpoint=/mnt/sda1   ansible_port=22002
+# 192.168.86.31     ansible_user=rock64     mountpoint=/mnt/sda1

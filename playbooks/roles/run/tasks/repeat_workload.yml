@@ -79,6 +79,7 @@
 - include_tasks: do_run.yml
   vars:
     notes: "{{ outer_notes_repeat }}, round {{ cur_round }}"
+    output_filename: "transactions_round{{ cur_round }}.dat"
   with_sequence: count={{ maximum_rounds }}
   loop_control:
     loop_var: cur_round

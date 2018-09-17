@@ -27,6 +27,22 @@
           {{ available_workloads }} to run using '--tags'
       when: run_workloads | length == 0
       failed_when: run_workloads | length == 0
+
+    - name: get the source device of mountpoint {{ mountpoint }}
+      shell: >
+        basename "$(findmnt --noheadings --output SOURCE --mountpoint {{ mountpoint }})"
+      register: comm_res
+      changed_when: False
+    - name: save the source device name
+      set_fact:
+        device_name: "{{ comm_res.stdout | basename }}"
+    - debug:
+        msg: >
+          Unable to find the source device of the mountpoint {{ mountpoint }}.
+          Please note that the 'mountpoint' has to be the strictly specified
+          mountpoint of the device.
+      when: device_name == ""
+      failed_when: device_name == ""
   roles:
     - setup
     - role: run
