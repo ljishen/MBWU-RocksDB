@@ -1,5 +1,7 @@
 {% include 'workloada' %}
 
+threadcount=1
+
 recordcount=10000
 operationcount=10000
 

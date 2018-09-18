@@ -17,21 +17,25 @@ git clone https://github.com/ljishen/ycsb-rocksdb.git
 cd ycsb-rocksdb
 
 # Modify the hosts and the corresponding device mountpoint
-vim hosts`
+vim hosts
 
 # run tests
-ansible-playbook playbooks/main.yml --tags WORKLOADS [-v]
+ansible-playbook playbooks/main.yml [-v]
 
-# TESTS can be any combinations of workloads separated by comma.
-# Besides all the 6 YCSB core workloads, you can create your own
-# workload and put it in dir `playbooks/roles/run/templates/`.
-#
-# WORKLOADS:
-#   The YCSB core workloads (workload[a-f]) and user-defined workloads
-#
-# E.g. ansible-playbook playbooks/main.yml --tags "workloada,workloadb"
+# Extra Variables:
+#   - rocksdb_options_file:
+#       This is the path of the RockDB options file. By default, it is the
+#       {{ playbook_dir }}/roles/run/files/OPTIONS
+#   - ycsb_run_workloads:
+#       This is the paths of a list of the YCSB workload parameter files
+#       separated by comma. By default, it is the
+#       {{ playbook_dir }}/roles/run/templates/myworkload
 #
 # Options:
-#   --extra-vars "rocksdb_options_file=/path/to/your/optionsfile"
 #   -v  Show debug messages while running playbook
+#
+# For examples:
+# $ ansible-playbook playbooks/main.yml -v \
+#       --extra-vars "ycsb_run_workloads=workloadc,/path/to/your/workload1,/path/to/your/workload2 rocksdb_options_file=/path/to/your/optionsfile"
+#
 ```

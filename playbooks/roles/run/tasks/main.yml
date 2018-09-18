@@ -16,19 +16,11 @@
   loop: "{{ core_workloads }}"
   run_once: yes
 
-- name: ensure the presence of RocksDB data dir {{ rocksdb_data_dir }}
-  become: yes
-  file:
-    owner: "{{ ansible_user }}"
-    path: "{{ rocksdb_data_dir }}"
-    state: "{{ item }}"
-  loop:
-    - absent
-    - directory
-
 - include_tasks: repeat_workload.yml
   vars:
-    notes: "{{ cur_workload }}"
+    cur_workload: "{{ cur_workload_path | basename }}"
+    notes: "{{ cur_workload_path }}"
+    rocksdb_data_dir: "{{ mountpoint }}/{{ rocksdb_data_dirname }}"
     local_output_dir: "{{ inventory_dir }}/analysis/data/{{ inventory_hostname }}/output_{{ cur_workload }}"
     remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"
     local_workload_file: "{{ local_output_dir }}/{{ cur_workload }}"
@@ -40,5 +32,5 @@
     remote_output_file: "{{ remote_output_dir }}/{{ output_filename }}"
   loop: "{{ run_workloads }}"
   loop_control:
-    loop_var: cur_workload
+    loop_var: cur_workload_path
 ...

@@ -13,6 +13,12 @@ ycsb_version: HEAD
 workdir: /tmp/ycsb-rocksdb
 rocksdb_data_dirname: ycsb-rocksdb-data
 
+# This variable accepts the name of YCSB core workloads and user-defined workloads.
+# You can provide your own workload parameter files
+# by passing variables through the command line
+#   --extra-vars "ycsb_run_workloads=workloadc,/path/to/your/workload1,/path/to/your/workload2"
+ycsb_run_workloads: "{{ playbook_dir }}/roles/run/templates/myworkload"
+
 # The default maximum number of iteration to evaluate the steady state for
 # each test. For some volatile drive which is harder to get to the steady
 # state, this number can be set to a higher number, e.g. 100.

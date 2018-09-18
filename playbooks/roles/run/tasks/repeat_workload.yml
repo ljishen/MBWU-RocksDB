@@ -1,12 +1,12 @@
 ---
-- name: ensure the presence of remote output dir {{ remote_output_dir }}
+- name: ({{ notes }}) ensure the presence of remote output dir {{ remote_output_dir }}
   become: yes
   file:
     owner: "{{ ansible_user }}"
     path: "{{ remote_output_dir }}"
     state: directory
 
-- name: ensure the presence of local output dir {{ local_output_dir }}
+- name: ({{ notes }}) ensure the presence of local output dir {{ local_output_dir }}
   become: yes
   local_action:
     module: file
@@ -14,16 +14,26 @@
     path: "{{ local_output_dir }}"
     state: directory
 
+- name: ({{ notes }}) ensure the presence of RocksDB data dir {{ rocksdb_data_dir }}
+  become: yes
+  file:
+    owner: "{{ ansible_user }}"
+    path: "{{ rocksdb_data_dir }}"
+    state: "{{ item }}"
+  loop:
+    - absent
+    - directory
+
 - name: ({{ notes }}) copy user-defined workload parameter file to {{ local_tmp_data_dir }}
   local_action:
     module: copy
     backup: yes
-    dest: "{{ local_tmp_data_dir }}/"
+    dest: "{{ local_tmp_data_dir }}/{{ cur_workload }}"
     force: yes
     owner: "{{ lookup('env', 'USER') }}"
     remote_src: no
-    src: "templates/{{ cur_workload }}"
-  when: cur_workload not in core_workloads
+    src: "{{ cur_workload_path }}"
+  when: cur_workload_path not in core_workloads
 
 - name: ({{ notes }}) deploy workload parameter file
   template:
