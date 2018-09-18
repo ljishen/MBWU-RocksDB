@@ -23,14 +23,15 @@ vim hosts`
 ansible-playbook playbooks/main.yml --tags WORKLOADS [-v]
 
 # TESTS can be any combinations of workloads separated by comma.
-# All the available workloads should be defined within directory
-# `playbooks/roles/run/templates/workload*`.
+# Besides all the 6 YCSB core workloads, you can create your own
+# workload and put it in dir `playbooks/roles/run/templates/`.
 #
 # WORKLOADS:
-#   The pre-defined YCSB workloads are: workload[a-f]
+#   The YCSB core workloads (workload[a-f]) and user-defined workloads
 #
 # E.g. ansible-playbook playbooks/main.yml --tags "workloada,workloadb"
 #
 # Options:
+#   --extra-vars "rocksdb_options_file=/path/to/your/optionsfile"
 #   -v  Show debug messages while running playbook
 ```
