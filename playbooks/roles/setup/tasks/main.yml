@@ -128,5 +128,5 @@
     {{ maven_dir }}/bin/mvn -pl com.yahoo.ycsb:rocksdb-binding -am clean package
   args:
     chdir: "{{ ycsb_dir }}"
-  when: git_res.after != git_res.before or stat_res.stat is not defined
+  when: git_res.after != git_res.before or stat_res.results[0] is not defined
 ...

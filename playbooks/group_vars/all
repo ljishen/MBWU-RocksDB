@@ -11,6 +11,7 @@ rocksdb_version: 5.14.3
 ycsb_version: HEAD
 
 workdir: /tmp/ycsb-rocksdb
+rocksdb_data_dirname: ycsb-rocksdb-data
 
 # The default maximum number of iteration to evaluate the steady state for
 # each test. For some volatile drive which is harder to get to the steady

@@ -1,17 +1,22 @@
 ---
-- name: ({{ notes }})
-  debug: msg="haha"
+- name: ({{ notes }}) get the before stats of device {{ device_name }}
+  command: "{{ device_stats_command }}"
+  register: before_stats_res
 
 - name: ({{ notes }}) execute the workload
   shell: >
     bin/ycsb run rocksdb -s
     -P {{ remote_workload_file }}
-    -p rocksdb.dir={{ mountpoint }}/{{ ycsb_data_dirname }}
+    -p rocksdb.dir={{ rocksdb_data_dir }}
     > {{ remote_output_file }} 2>&1
   args:
     chdir: "{{ ycsb_dir }}"
   environment:
     PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+
+- name: ({{ notes }}) get the after stats of device {{ device_name }}
+  command: "{{ device_stats_command }}"
+  register: after_stats_res
 
 - include_tasks: backup_file.yml
   vars:
