@@ -16,7 +16,7 @@ rocksdb_data_dirname: ycsb-rocksdb-data
 # This variable accepts the name of YCSB core workloads and user-defined workloads.
 # You can provide your own workload parameter files
 # by passing variables through the command line
-#   --extra-vars "ycsb_run_workloads=workloadc,/path/to/your/workload1,/path/to/your/workload2"
+#   --extra-vars "ycsb_run_workloads=workloadc,/path/to/workload1,/path/to/workload2"
 ycsb_run_workloads: "{{ playbook_dir }}/roles/run/templates/myworkload"
 
 # The default maximum number of iteration to evaluate the steady state for
@@ -29,10 +29,10 @@ maximum_rounds: 25
 
 # You can use your own RocksDB options file on the originating/master machine
 # by passing variables through the command line
-#   --extra-vars "rocksdb_options_file=/path/to/your/optionsfile"
+#   --extra-vars "rocksdb_options_file=/path/to/optionsfile"
 # See https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#passing-variables-on-the-command-line
-rocksdb_options_file: "{{ role_path }}/files/OPTIONS"
+rocksdb_options_file: "{{ playbook_dir }}/roles/run/files/OPTIONS"
 
 key_sz_bytes: 16
-value_sz_kbytes: 1
+value_sz_kbytes: 8
 ...

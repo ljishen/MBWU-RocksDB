@@ -28,7 +28,9 @@ ansible-playbook playbooks/main.yml [-v]
 #       {{ playbook_dir }}/roles/run/files/OPTIONS
 #   - ycsb_run_workloads:
 #       This is the paths of a list of the YCSB workload parameter files
-#       separated by comma. By default, it is the
+#       separated by comma. Each of them could be any of the YCSB core
+#       workload[a-f], or the absolute path of a user-defined workload
+#       parameter file. By default, it is the
 #       {{ playbook_dir }}/roles/run/templates/myworkload
 #
 # Options:
@@ -36,6 +38,6 @@ ansible-playbook playbooks/main.yml [-v]
 #
 # For example:
 # $ ansible-playbook playbooks/main.yml -v \
-#       --extra-vars "ycsb_run_workloads=workloadc,/path/to/your/workload1,/path/to/your/workload2 rocksdb_options_file=/path/to/your/optionsfile"
+#       --extra-vars "ycsb_run_workloads=workloadc,/path/to/workload1,/path/to/workload2 rocksdb_options_file=/path/to/optionsfile"
 #
 ```
