@@ -34,7 +34,7 @@ ansible-playbook playbooks/main.yml [-v]
 # Options:
 #   -v  Show debug messages while running playbook
 #
-# For examples:
+# For example:
 # $ ansible-playbook playbooks/main.yml -v \
 #       --extra-vars "ycsb_run_workloads=workloadc,/path/to/your/workload1,/path/to/your/workload2 rocksdb_options_file=/path/to/your/optionsfile"
 #
