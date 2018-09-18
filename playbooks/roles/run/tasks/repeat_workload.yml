@@ -89,6 +89,8 @@
 
 - set_fact:
     outer_notes_repeat: "{{ notes }}"
+    tracking_values: []
+    steady_state: False
 
 - include_tasks: do_run.yml
   vars:

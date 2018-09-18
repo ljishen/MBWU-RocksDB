@@ -1,0 +1,3 @@
+---
+# (DO NOT CHANGE) Use the last x number of values to detect steady state.
+measurement_window_size: 5

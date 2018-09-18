@@ -1,47 +1,70 @@
 ---
-- name: ({{ notes }}) get the stats of device {{ device_name }} (before)
-  # We don't want to interfere the stats of the block device so just not to
-  # write the result directly to file here.
-  shell: "{{ device_stats_command }}"
-  register: before_stats_res
+- block:
 
-- name: ({{ notes }}) execute the workload
-  shell: >
-    bin/ycsb run rocksdb -s
-    -P {{ remote_workload_file }}
-    -p rocksdb.dir={{ rocksdb_data_dir }}
-    > {{ remote_output_file }} 2>&1
-  args:
-    chdir: "{{ ycsb_dir }}"
-  environment:
-    PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+    - name: ({{ notes }}) get the stats of device {{ device_name }} (before)
+      # We don't want to interfere the stats of the block device so just not to
+      # write the result directly to file here.
+      shell: "{{ device_stats_command }}"
+      register: before_stats_res
 
-- name: ({{ notes }}) get the stats of device {{ device_name }} (after)
-  shell: "{{ device_stats_command }}"
-  register: after_stats_res
+    - name: ({{ notes }}) execute the workload
+      shell: >
+        bin/ycsb run rocksdb -s
+        -P {{ remote_workload_file }}
+        -p rocksdb.dir={{ rocksdb_data_dir }}
+        > {{ remote_output_file }} 2>&1
+      args:
+        chdir: "{{ ycsb_dir }}"
+      environment:
+        PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
 
-- include_tasks: backup_file.yml
-  vars:
-    local_file: "{{ local_output_file }}"
-    remote_file: "{{ remote_output_file }}"
+    - name: ({{ notes }}) get the stats of device {{ device_name }} (after)
+      shell: "{{ device_stats_command }}"
+      register: after_stats_res
 
-- name: ({{ notes }}) save device stats to files
-  copy:
-    backup: no
-    content: "{{ item.register.stdout }}"
-    dest: "{{ remote_device_stats_file }}"
-    force: yes
-    owner: "{{ ansible_user }}"
-  vars:
-    flag: "{{ item.flag }}"
-  loop:
-    - { register: "{{ before_stats_res }}", flag: 'b' }
-    - { register: "{{ after_stats_res }}", flag: 'a' }
+    - include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_output_file }}"
+        remote_file: "{{ remote_output_file }}"
 
-- include_tasks: backup_file.yml
-  vars:
-    flag: "{{ item }}"
-    local_file: "{{ local_device_stats_file }}"
-    remote_file: "{{ remote_device_stats_file }}"
-  loop: [ 'b', 'a' ]
+    - name: ({{ notes }}) save device stats to files
+      copy:
+        backup: no
+        content: "{{ item.register.stdout }}"
+        dest: "{{ remote_device_stats_file }}"
+        force: yes
+        owner: "{{ ansible_user }}"
+      vars:
+        flag: "{{ item.flag }}"
+      loop:
+        - { register: "{{ before_stats_res }}", flag: 'b' }
+        - { register: "{{ after_stats_res }}", flag: 'a' }
+
+    - include_tasks: backup_file.yml
+      vars:
+        flag: "{{ item }}"
+        local_file: "{{ local_device_stats_file }}"
+        remote_file: "{{ remote_device_stats_file }}"
+      loop: [ 'b', 'a' ]
+
+    - name: ({{ notes }}) extract the throughput value from output
+      command: >
+        grep -oP '\[OVERALL\],\s+Throughput\(ops/sec\),\s+\K[\d.]+' {{ remote_output_file }}
+      register: comm_res
+
+    - name: ({{ notes }}) save throughput for steady state detection
+      set_fact:
+        tracking_values: "{{ tracking_values + [ comm_res.stdout | float ] }}"
+
+    - name: ({{ notes }}) check steady state
+      script: >
+        {{ role_path }}/files/verify_ss.py '{{ tracking_values }}' {{ measurement_window_size }}
+      register: script_res
+      ignore_errors: yes
+
+    - name: ({{ notes }}) update loop condition
+      set_fact:
+        steady_state: "{{ True if script_res.rc == 0 else False }}"
+
+  when: not steady_state
 ...
