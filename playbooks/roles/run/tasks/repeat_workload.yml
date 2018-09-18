@@ -89,7 +89,7 @@
     remote_device_stats_file: "{{ remote_output_dir }}/{{ device_stats_filename }}"
     device_stats_command: >
       grep -oP '{{ device_name }}\s+\K.+$' /proc/diskstats
-  with_sequence: count={{ maximum_rounds }}
+  loop: "{{ range(1, maximum_rounds + 1) | list }}"
   loop_control:
     loop_var: cur_round
 ...

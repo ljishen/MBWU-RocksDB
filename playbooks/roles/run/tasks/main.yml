@@ -13,7 +13,7 @@
     fail_on_missing: yes
     flat: yes
     src: "{{ ycsb_dir }}/workloads/{{ item }}"
-  with_items: "{{ core_workloads }}"
+  loop: "{{ core_workloads }}"
   run_once: yes
 
 - name: ensure the presence of RocksDB data dir {{ rocksdb_data_dir }}
@@ -22,7 +22,7 @@
     owner: "{{ ansible_user }}"
     path: "{{ rocksdb_data_dir }}"
     state: "{{ item }}"
-  with_items:
+  loop:
     - absent
     - directory
 
@@ -36,7 +36,7 @@
     output_filename: "load.dat"
     local_output_file: "{{ local_output_dir }}/{{ output_filename }}"
     remote_output_file: "{{ remote_output_dir }}/{{ output_filename }}"
-  with_items: "{{ run_workloads }}"
+  loop: "{{ run_workloads }}"
   loop_control:
     loop_var: cur_workload
 ...
