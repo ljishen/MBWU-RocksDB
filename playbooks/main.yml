@@ -49,5 +49,4 @@
       vars:
         local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
         rocksdb_data_dir: "{{ mountpoint }}/{{ rocksdb_data_dirname }}"
-        device_stats_command: grep -oP '{{ device_name }}\s+\K.+$' /proc/diskstats
 ...

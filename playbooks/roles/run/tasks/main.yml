@@ -21,7 +21,10 @@
   file:
     owner: "{{ ansible_user }}"
     path: "{{ rocksdb_data_dir }}"
-    state: directory
+    state: "{{ item }}"
+  with_items:
+    - absent
+    - directory
 
 - include_tasks: repeat_workload.yml
   vars:

@@ -1,6 +1,8 @@
 ---
-- name: ({{ notes }}) get the before stats of device {{ device_name }}
-  command: "{{ device_stats_command }}"
+- name: ({{ notes }}) get the stats of device {{ device_name }} (before)
+  # We don't want to interfere the stats of the block device so just not to
+  # write the result directly to file here.
+  shell: "{{ device_stats_command }}"
   register: before_stats_res
 
 - name: ({{ notes }}) execute the workload
@@ -14,12 +16,32 @@
   environment:
     PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
 
-- name: ({{ notes }}) get the after stats of device {{ device_name }}
-  command: "{{ device_stats_command }}"
+- name: ({{ notes }}) get the stats of device {{ device_name }} (after)
+  shell: "{{ device_stats_command }}"
   register: after_stats_res
 
 - include_tasks: backup_file.yml
   vars:
     local_file: "{{ local_output_file }}"
     remote_file: "{{ remote_output_file }}"
+
+- name: ({{ notes }}) save device stats to files
+  copy:
+    backup: no
+    content: "{{ item.register.stdout }}"
+    dest: "{{ remote_device_stats_file }}"
+    force: yes
+    owner: "{{ ansible_user }}"
+  vars:
+    flag: "{{ item.flag }}"
+  loop:
+    - { register: "{{ before_stats_res }}", flag: 'b' }
+    - { register: "{{ after_stats_res }}", flag: 'a' }
+
+- include_tasks: backup_file.yml
+  vars:
+    flag: "{{ item }}"
+    local_file: "{{ local_device_stats_file }}"
+    remote_file: "{{ remote_device_stats_file }}"
+  loop: [ 'b', 'a' ]
 ...

@@ -80,6 +80,15 @@
   vars:
     notes: "{{ outer_notes_repeat }}, round {{ cur_round }}"
     output_filename: "transactions_round{{ cur_round }}.dat"
+
+    # flag 'b' for before the workload execution
+    # flag 'a' for after the workload execution
+    device_stats_filename: "device_stats_round{{ cur_round }}_{{ flag }}.log"
+
+    local_device_stats_file: "{{ local_output_dir }}/{{ device_stats_filename }}"
+    remote_device_stats_file: "{{ remote_output_dir }}/{{ device_stats_filename }}"
+    device_stats_command: >
+      grep -oP '{{ device_name }}\s+\K.+$' /proc/diskstats
   with_sequence: count={{ maximum_rounds }}
   loop_control:
     loop_var: cur_round
