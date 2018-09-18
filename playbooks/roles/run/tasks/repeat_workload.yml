@@ -56,12 +56,26 @@
     local_file: "{{ local_workload_file }}"
     remote_file: "{{ remote_workload_file }}"
 
+- name: ({{ notes }}) deploy the RocksDB options file
+  copy:
+    backup: yes
+    dest: "{{ remote_rocksdb_options_file }}"
+    force: yes
+    owner: "{{ lookup('env', 'USER') }}"
+    remote_src: no
+    src: "{{ rocksdb_options_file }}"
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_rocksdb_options_file }}"
+    remote_file: "{{ remote_rocksdb_options_file }}"
+
 - name: ({{ notes }}) load the data
   shell: >
     bin/ycsb load rocksdb -s
     -P {{ remote_workload_file }}
     -p rocksdb.dir={{ rocksdb_data_dir }}
-    -p options.file={{ role_path }}/files/OPTIONS
+    -p options.file={{ remote_rocksdb_options_file }}
     > {{ remote_output_file }} 2>&1
   args:
     chdir: "{{ ycsb_dir }}"

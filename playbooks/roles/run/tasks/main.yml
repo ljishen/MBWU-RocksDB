@@ -33,6 +33,8 @@
     remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"
     local_workload_file: "{{ local_output_dir }}/{{ cur_workload }}"
     remote_workload_file: "{{ remote_output_dir }}/{{ cur_workload }}"
+    local_rocksdb_options_file: "{{ local_output_dir }}/{{ rocksdb_options_file | basename }}"
+    remote_rocksdb_options_file: "{{ remote_output_dir }}/{{ rocksdb_options_file | basename }}"
     output_filename: "load.dat"
     local_output_file: "{{ local_output_dir }}/{{ output_filename }}"
     remote_output_file: "{{ remote_output_dir }}/{{ output_filename }}"

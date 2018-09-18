@@ -28,7 +28,6 @@
   two_write_queues=false
   bytes_per_sync=0
   writable_file_max_buffer_size=1048576
-  wal_dir=/tmp/ycsb-rocksdb-data
   log_file_time_to_roll=0
   keep_log_file_num=1000
   WAL_ttl_seconds=0
@@ -71,7 +70,7 @@
   allow_mmap_reads=false
   new_table_reader_for_compaction_inputs=false
   advise_random_on_open=true
-  
+
 
 [CFOptions "default"]
   ttl=0
@@ -120,7 +119,7 @@
   memtable_factory=SkipListFactory
   compaction_filter_factory=nullptr
   compaction_style=kCompactionStyleLevel
-  
+
 [TableOptions/BlockBasedTable "default"]
   block_align=false
   index_type=kBinarySearch
@@ -143,7 +142,7 @@
   read_amp_bytes_per_bit=8589934592
   flush_block_policy_factory=FlushBlockBySizePolicyFactory
   enable_index_compression=true
-  
+
 
 [CFOptions "usertable"]
   ttl=0
@@ -192,7 +191,7 @@
   memtable_factory=SkipListFactory
   compaction_filter_factory=nullptr
   compaction_style=kCompactionStyleLevel
-  
+
 [TableOptions/BlockBasedTable "usertable"]
   block_align=false
   index_type=kBinarySearch
@@ -215,4 +214,4 @@
   read_amp_bytes_per_bit=8589934592
   flush_block_policy_factory=FlushBlockBySizePolicyFactory
   enable_index_compression=true
-  
+

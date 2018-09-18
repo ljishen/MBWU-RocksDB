@@ -19,7 +19,13 @@ rocksdb_data_dirname: ycsb-rocksdb-data
 maximum_rounds: 25
 
 
-########## RocksDB Properties ##########
+#################### RocksDB Properties ####################
+
+# You can use your own RocksDB options file on the originating/master machine
+# by passing variables through the command line
+#   --extra-vars "rocksdb_options_file=/path/to/your/optionsfile"
+# See https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#passing-variables-on-the-command-line
+rocksdb_options_file: "{{ role_path }}/files/OPTIONS"
 
 key_sz_bytes: 16
 value_sz_kbytes: 1
