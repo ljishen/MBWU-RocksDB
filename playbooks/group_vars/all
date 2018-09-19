@@ -33,6 +33,7 @@ maximum_rounds: 25
 # See https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#passing-variables-on-the-command-line
 rocksdb_options_file: "{{ playbook_dir }}/roles/run/templates/OPTIONS"
 
+# This value needs to be bigger than number of digits in the recordcount
 key_sz_bytes: 16
 
 # This value cannot be less than 13 + len(str(fieldcount - 1))

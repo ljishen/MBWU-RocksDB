@@ -19,3 +19,6 @@ fieldlength={{ max_value_sz_bytes - 4 * 2 - (5 + (fieldcount  - 1) | string | le
 # https://github.com/ljishen/YCSB/blob/master/rocksdb/src/main/java/com/yahoo/ycsb/db/rocksdb/RocksDBClient.java
 # https://github.com/ljishen/YCSB/blob/master/core/src/main/java/com/yahoo/ycsb/workloads/CoreWorkload.java
 zeropadding={{ key_sz_bytes - 4 }}
+
+# This has to be ordered to make the key size fixed
+insertorder=ordered

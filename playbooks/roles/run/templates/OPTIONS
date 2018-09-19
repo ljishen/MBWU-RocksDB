@@ -87,7 +87,7 @@
   max_bytes_for_level_base=536870912
   optimize_filters_for_hits=false
   force_consistency_checks=false
-  disable_auto_compactions=false
+  disable_auto_compactions=true
   max_compaction_bytes=1677721600
   hard_pending_compaction_bytes_limit=274877906944
   compaction_options_fifo={allow_compaction=false;max_table_files_size=1073741824;ttl=0;}
@@ -132,7 +132,7 @@
   index_block_restart_interval=1
   hash_index_allow_collision=true
   partition_filters=false
-  block_size=4096
+  block_size=8192
   block_size_deviation=10
   verify_compression=false
   filter_policy=nullptr
@@ -159,7 +159,7 @@
   max_bytes_for_level_base=536870912
   optimize_filters_for_hits=false
   force_consistency_checks=false
-  disable_auto_compactions=false
+  disable_auto_compactions=true
   max_compaction_bytes=1677721600
   hard_pending_compaction_bytes_limit=274877906944
   compaction_options_fifo={allow_compaction=false;max_table_files_size=1073741824;ttl=0;}
@@ -204,7 +204,7 @@
   index_block_restart_interval=1
   hash_index_allow_collision=true
   partition_filters=false
-  block_size=4096
+  block_size=8192
   block_size_deviation=10
   verify_compression=false
   filter_policy=nullptr
