@@ -34,5 +34,10 @@ maximum_rounds: 25
 rocksdb_options_file: "{{ playbook_dir }}/roles/run/files/OPTIONS"
 
 key_sz_bytes: 16
-value_sz_kbytes: 8
+
+# This value cannot be less than 13 + len(str(fieldcount - 1))
+# The min_value_sz_bytes would be
+#   max_value_sz_bytes + 1 - len(str(fieldcount - 1))
+# The default value of fieldcount is 1
+max_value_sz_bytes: 8192
 ...

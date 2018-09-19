@@ -1,3 +1,8 @@
 ---
+# Since the YCSB RocksDB binding just combines all the fields into a single
+# byte array as the value. Reducing the field counts helps to free up more CPU
+# resources for the I/O path.
+fieldcount: 1
+
 # (DO NOT CHANGE) Use the last x number of values to detect steady state.
 measurement_window_size: 5

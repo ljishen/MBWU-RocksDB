@@ -1,12 +1,21 @@
 ########## Common Workload Parameters ##########
 
-# Since the YCSB RocksDB binding just combines all the fields into a single
-# byte array as the value. Reducing the field counts helps to free up more CPU
-# resources for the I/O path.
-fieldcount=1
-fieldlength={{ value_sz_kbytes * 1024 }}
+fieldcount={{ fieldcount }}
+
+# According to the serialization method for combining all the fields in the RocksDB binding,
+# RocksDB value = bytes of the length of the field name (4 bytes) +
+#                 bytes of the field key ("field" + index) +
+#                 bytes of the length of the field value (4 bytes) +
+#                 bytes of the field value (this is the fieldlength)
+# https://github.com/ljishen/YCSB/blob/master/rocksdb/src/main/java/com/yahoo/ycsb/db/rocksdb/RocksDBClient.java#L318
+fieldlength={{ max_value_sz_bytes - 4 * 2 - (5 + (fieldcount  - 1) | string | length) }}
 
 # For example for row 5, with zeropadding=1 you get 'user5' key and with
 # zeropading=8 you get 'user00000005' key.
-# Each ASCII character in Java String takes 1 byte.
+#
+# In Java each ASCII character is encoded to 1 byte using UTF-8 charset.
+#
+# See
+# https://github.com/ljishen/YCSB/blob/master/rocksdb/src/main/java/com/yahoo/ycsb/db/rocksdb/RocksDBClient.java
+# https://github.com/ljishen/YCSB/blob/master/core/src/main/java/com/yahoo/ycsb/workloads/CoreWorkload.java
 zeropadding={{ key_sz_bytes - 4 }}
