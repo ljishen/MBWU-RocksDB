@@ -67,12 +67,11 @@
     remote_file: "{{ remote_workload_file }}"
 
 - name: ({{ notes }}) deploy the RocksDB options file
-  copy:
+  template:
     backup: yes
     dest: "{{ remote_rocksdb_options_file }}"
     force: yes
-    owner: "{{ lookup('env', 'USER') }}"
-    remote_src: no
+    owner: "{{ ansible_user }}"
     src: "{{ rocksdb_options_file }}"
 
 - include_tasks: backup_file.yml

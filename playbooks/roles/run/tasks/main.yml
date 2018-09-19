@@ -19,7 +19,7 @@
 - include_tasks: repeat_workload.yml
   vars:
     cur_workload: "{{ cur_workload_path | basename }}"
-    notes: "{{ cur_workload_path }}"
+    notes: "{{ cur_workload }}"
     rocksdb_data_dir: "{{ mountpoint }}/{{ rocksdb_data_dirname }}"
     local_output_dir: "{{ inventory_dir }}/analysis/data/{{ inventory_hostname }}/output_{{ cur_workload }}"
     remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"

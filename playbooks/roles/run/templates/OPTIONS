@@ -38,9 +38,9 @@
   WAL_size_limit_MB=0
   max_background_flushes=-1
   db_log_dir=
-  max_background_compactions=48
+  max_background_compactions={{ ansible_processor_vcpus }}
   max_subcompactions=1
-  max_background_jobs=48
+  max_background_jobs={{ ansible_processor_vcpus }}
   random_access_max_buffer_size=1048576
   delete_obsolete_files_period_micros=21600000000
   skip_stats_update_on_db_open=false

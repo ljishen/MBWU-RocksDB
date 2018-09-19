@@ -31,7 +31,7 @@ maximum_rounds: 25
 # by passing variables through the command line
 #   --extra-vars "rocksdb_options_file=/path/to/optionsfile"
 # See https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#passing-variables-on-the-command-line
-rocksdb_options_file: "{{ playbook_dir }}/roles/run/files/OPTIONS"
+rocksdb_options_file: "{{ playbook_dir }}/roles/run/templates/OPTIONS"
 
 key_sz_bytes: 16
 

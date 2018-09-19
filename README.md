@@ -25,7 +25,7 @@ ansible-playbook playbooks/main.yml [-v]
 # Extra Variables:
 #   - rocksdb_options_file:
 #       This is the path of the RockDB options file. By default, it is the
-#       {{ playbook_dir }}/roles/run/files/OPTIONS
+#       {{ playbook_dir }}/roles/run/templates/OPTIONS
 #   - ycsb_run_workloads:
 #       This is the paths of a list of the YCSB workload parameter files
 #       separated by comma. Each of them could be any of the YCSB core
