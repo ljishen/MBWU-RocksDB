@@ -1,4 +1,4 @@
-{% include 'workloada' %}
+{% include 'workloadc' %}
 
 # You can overwite any parameters from workloada here
 
