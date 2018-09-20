@@ -22,3 +22,6 @@ zeropadding={{ key_sz_bytes - 4 }}
 
 # This has to be ordered to make the key size fixed
 insertorder=ordered
+
+# Whether or not to track the JVM stats per run
+measurement.trackjvm=true
