@@ -1,7 +1,12 @@
 {% include 'workloada' %}
 
+# You can overwite any parameters from workloada here
+
 threadcount=1
 
-recordcount=10000
-operationcount=10000
+# The data size is approximately 100GB
+recordcount={{ (100 * 1024 * 1024 * 1024 / max_value_sz_bytes) | int }}
+
+# The number of operations is about 75% of the recordcount
+operationcount={{ (100 * 1024 * 1024 * 1024 / max_value_sz_bytes * 0.75) | int }}
 
