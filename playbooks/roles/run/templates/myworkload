@@ -5,8 +5,8 @@
 threadcount=1
 
 # The data size is approximately 100GB
-recordcount={{ (100 * 1024 * 1024 * 1024 / max_value_sz_bytes) | int }}
+recordcount={{ (100 * 1024 * 1024 * 1024 / (max_value_sz_bytes + key_sz_bytes)) | int }}
 
 # The number of operations is about 75% of the recordcount
-operationcount={{ (100 * 1024 * 1024 * 1024 / max_value_sz_bytes * 0.75) | int }}
+operationcount={{ (0.75 * 100 * 1024 * 1024 * 1024 / (max_value_sz_bytes + key_sz_bytes)) | int }}
 
