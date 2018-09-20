@@ -41,4 +41,10 @@ key_sz_bytes: 16
 #   max_value_sz_bytes + 1 - len(str(fieldcount - 1))
 # The default value of fieldcount is 1
 max_value_sz_bytes: 8192
+
+
+#################### Debug Properties ####################
+
+# Whether to run the YCSB loading phase
+load_data: True
 ...

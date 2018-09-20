@@ -66,35 +66,37 @@
     local_file: "{{ local_workload_file }}"
     remote_file: "{{ remote_workload_file }}"
 
-- name: ({{ notes }}) deploy the RocksDB options file
-  template:
-    backup: yes
-    dest: "{{ remote_rocksdb_options_file }}"
-    force: yes
-    owner: "{{ ansible_user }}"
-    src: "{{ rocksdb_options_file }}"
+- block:
+    - name: ({{ notes }}) deploy the RocksDB options file
+      template:
+        backup: yes
+        dest: "{{ remote_rocksdb_options_file }}"
+        force: yes
+        owner: "{{ ansible_user }}"
+        src: "{{ rocksdb_options_file }}"
 
-- include_tasks: backup_file.yml
-  vars:
-    local_file: "{{ local_rocksdb_options_file }}"
-    remote_file: "{{ remote_rocksdb_options_file }}"
+    - include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_rocksdb_options_file }}"
+        remote_file: "{{ remote_rocksdb_options_file }}"
 
-- name: ({{ notes }}) load the data
-  shell: >
-    bin/ycsb load rocksdb -s
-    -P {{ remote_workload_file }}
-    -p rocksdb.dir={{ rocksdb_data_dir }}
-    -p options.file={{ remote_rocksdb_options_file }}
-    > {{ remote_output_file }} 2>&1
-  args:
-    chdir: "{{ ycsb_dir }}"
-  environment:
-    PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+    - name: ({{ notes }}) load the data
+      shell: >
+        bin/ycsb load rocksdb -s
+        -P {{ remote_workload_file }}
+        -p rocksdb.dir={{ rocksdb_data_dir }}
+        -p options.file={{ remote_rocksdb_options_file }}
+        > {{ remote_output_file }} 2>&1
+      args:
+        chdir: "{{ ycsb_dir }}"
+      environment:
+        PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
 
-- include_tasks: backup_file.yml
-  vars:
-    local_file: "{{ local_output_file }}"
-    remote_file: "{{ remote_output_file }}"
+    - include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_output_file }}"
+        remote_file: "{{ remote_output_file }}"
+  when: load_data
 
 - set_fact:
     outer_notes_repeat: "{{ notes }}"
