@@ -149,4 +149,10 @@
   args:
     chdir: "{{ ycsb_dir }}"
   when: git_res.after != git_res.before or find_res.matched == 0
+
+- name: config scaling governor for online CPUs
+  become: yes
+  command: "{{ role_path }}/files/config_cpu.sh {{ cpu_scaling_governor }}"
+  register: cpu_config_res
+  changed_when: "cpu_config_res.rc == 0"
 ...
