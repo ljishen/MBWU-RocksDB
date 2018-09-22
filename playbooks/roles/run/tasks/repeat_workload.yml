@@ -14,9 +14,9 @@
     path: "{{ local_output_dir }}"
     state: directory
 
-- name: ({{ notes }}) verify the RocksDB data dir {{ rocksdb_data_dir }}
-  block:
-    - stat:
+- block:
+    - name: ({{ notes }}) check the validity of the RocksDB data dir {{ rocksdb_data_dir }}
+      stat:
         follow: yes
         path: "{{ rocksdb_data_dir }}/CURRENT"
       register: stat_res
