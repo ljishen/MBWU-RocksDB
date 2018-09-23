@@ -27,3 +27,8 @@ cpustat_pid_file: "{{ workdir }}/cpustat.pid"
 cpustat_log_filename: "cpustat.log"
 local_cpustat_log_file: "{{ local_output_dir }}/{{ cpustat_log_filename }}"
 remote_cpustat_log_file: "{{ remote_output_dir }}/{{ cpustat_log_filename }}"
+
+memstat_pid_file: "{{ workdir }}/memstat.pid"
+memstat_log_filename: "memstat.log"
+local_memstat_log_file: "{{ local_output_dir }}/{{ memstat_log_filename }}"
+remote_memstat_log_file: "{{ remote_output_dir }}/{{ memstat_log_filename }}"
