@@ -30,6 +30,10 @@
     output_filename: "load.dat"
     local_output_file: "{{ local_output_dir }}/{{ output_filename }}"
     remote_output_file: "{{ remote_output_dir }}/{{ output_filename }}"
+    cpustat_pid_file: "{{ workdir }}/cpustat.pid"
+    cpustat_log_filename: "cpustat.log"
+    local_cpustat_log_file: "{{ local_output_dir }}/{{ cpustat_log_filename }}"
+    remote_cpustat_log_file: "{{ remote_output_dir }}/{{ cpustat_log_filename }}"
   loop: "{{ run_workloads }}"
   loop_control:
     loop_var: cur_workload_path

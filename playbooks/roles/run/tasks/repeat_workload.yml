@@ -81,6 +81,18 @@
     local_file: "{{ local_workload_file }}"
     remote_file: "{{ remote_workload_file }}"
 
+- name: ({{ notes }}) kill the remnant process of collecting CPUs statistics
+  shell: pkill -SIGTERM --pidfile {{ cpustat_pid_file }} ; rm --force {{ cpustat_pid_file }}
+
+- name: ({{ notes }}) start to collect CPUs statistics
+  # we use stdbuf to turn off the buffering of the output redirection.
+  #   https://linux.die.net/man/1/stdbuf
+  #   https://stackoverflow.com/a/1429973
+  shell: >
+    nohup stdbuf -oL -eL mpstat -P ALL 3 < /dev/null > {{ remote_cpustat_log_file }} 2>&1 & echo $! > {{ cpustat_pid_file }}
+  environment:
+    S_TIME_FORMAT: ISO
+
 - block:
     - name: ({{ notes }}) deploy the RocksDB options file
       template:
@@ -134,4 +146,12 @@
   loop: "{{ range(1, maximum_rounds + 1) | list }}"
   loop_control:
     loop_var: cur_round
+
+- name: ({{ notes }}) stop to collect CPUs statistics
+  shell: pkill -SIGINT --pidfile {{ cpustat_pid_file }} ; rm --force {{ cpustat_pid_file }}
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_cpustat_log_file }}"
+    remote_file: "{{ remote_cpustat_log_file }}"
 ...
