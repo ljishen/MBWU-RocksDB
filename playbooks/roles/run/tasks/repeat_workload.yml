@@ -154,7 +154,7 @@
     local_device_stats_file: "{{ local_output_dir }}/{{ device_stats_filename }}"
     remote_device_stats_file: "{{ remote_output_dir }}/{{ device_stats_filename }}"
     device_stats_command: >
-      grep -w '{{ device_name }}' /proc/diskstats
+      grep -w '{{ device_name | basename }}' /proc/diskstats
   loop: "{{ range(1, maximum_rounds + 1) | list }}"
   loop_control:
     loop_var: cur_round

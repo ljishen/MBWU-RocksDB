@@ -26,13 +26,14 @@
       loop: "{{ stat_res.results }}"
 
     - name: get the source device of mountpoint {{ mountpoint }}
-      shell: >
-        basename "$(findmnt --noheadings --output SOURCE --mountpoint {{ mountpoint }})"
+      command: >
+        findmnt --noheadings --output SOURCE --mountpoint {{ mountpoint }}
       register: comm_res
       changed_when: False
+      ignore_errors: yes
     - name: save the source device name
       set_fact:
-        device_name: "{{ comm_res.stdout | basename }}"
+        device_name: "{{ comm_res.stdout }}"
     - debug:
         msg: >
           Unable to find the source device of the mountpoint {{ mountpoint }}.
