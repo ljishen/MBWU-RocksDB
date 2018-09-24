@@ -82,6 +82,7 @@
     remote_file: "{{ remote_workload_file }}"
 
 - name: ({{ notes }}) kill the remnant processes for collecting system performance statistics
+  become: yes
   shell: pkill -SIGTERM --pidfile {{ item }} ; rm --force {{ item }}
   loop:
     - "{{ cpustat_pid_file }}"
@@ -182,6 +183,7 @@
     loop_var: cur_round
 
 - name: ({{ notes }}) stop to collect system performance statistics
+  become: yes
   shell: pkill -SIGINT --pidfile {{ item }} ; rm --force {{ item }}
   loop:
     - "{{ cpustat_pid_file }}"
