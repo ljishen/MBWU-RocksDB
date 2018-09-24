@@ -128,6 +128,10 @@
       -f "dev == {{ comm_res.stdout_lines[1] }}" &
     echo $! > {{ blkstat_pid_file }}
 
+- name: ({{ notes }}) pause to wait for the tracer to start
+  pause:
+    seconds: 6
+
 - block:
     - name: ({{ notes }}) deploy the RocksDB options file
       template:
@@ -192,7 +196,7 @@
 
 - name: ({{ notes }}) pause to wait all the performance statistics collecting processes finished
   pause:
-    seconds: 10
+    seconds: 15
 
 - include_tasks: backup_file.yml
   vars:
