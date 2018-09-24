@@ -1,6 +1,6 @@
 # mountpoint: The mountpoint that could belong to the
 #             device under test (DUT). You should make sure that no
-#             other program issues I/O requests to this mountpoint
+#             other program issues I/O requests to this device
 #             during the test except the current YCSB workload.
 #             This is required for each host.
 

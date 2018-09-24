@@ -86,6 +86,7 @@
   loop:
     - "{{ cpustat_pid_file }}"
     - "{{ memstat_pid_file }}"
+    - "{{ blkstat_pid_file }}"
 
 - name: ({{ notes }}) start to collect system performance statistics
   # we use stdbuf to turn off the buffering of the output redirection.
@@ -104,6 +105,27 @@
     - { command: vmstat --one-header --wide --unit K --timestamp 3,
         remote_log_file: "{{ remote_memstat_log_file }}",
         pid_file: "{{ memstat_pid_file }}" }
+
+- name: ({{ notes }}) get the parent device ID of device {{ device_name }}
+  command: "{{ role_path }}/majmin2dev.sh {{ device_name }}"
+  register: comm_res
+  changed_when: False
+
+- name: ({{ notes }}) start to trace the block events for device {{ comm_res.stdout_lines[0] }}
+  become: yes
+  # A very good article: "trace-cmd: A front-end for Ftrace"
+  #   https://lwn.net/Articles/410200/
+  # Some definitions of the block I/O events:
+  #   https://www.ibm.com/developerworks/community/blogs/58e72888-6340-46ac-b488-d31aa4058e9c/entry/exploring_the_linux_storage_path_tracing_block_i_o_kernel_events?lang=en_us
+  command: >
+    trace-cmd record
+      -o {{ remote_blkstat_log_file }}
+      --date
+      -e block:block_rq_issue
+      -f "dev == {{ comm_res.stdout_lines[1] }}"
+      -e block:block_rq_complete
+      -f "dev == {{ comm_res.stdout_lines[1] }}"
+    & echo $! > {{ blkstat_pid_file }}
 
 - block:
     - name: ({{ notes }}) deploy the RocksDB options file
@@ -164,6 +186,11 @@
   loop:
     - "{{ cpustat_pid_file }}"
     - "{{ memstat_pid_file }}"
+    - "{{ blkstat_pid_file }}"
+
+- name: ({{ notes }}) pause to wait all the performance statistics collecting processes finished
+  pause:
+    seconds: 10
 
 - include_tasks: backup_file.yml
   vars:
@@ -174,4 +201,6 @@
         remote_file: "{{ remote_cpustat_log_file }}" }
     - { local_file: "{{ local_memstat_log_file }}",
         remote_file: "{{ remote_memstat_log_file }}" }
+    - { local_file: "{{ local_blkstat_log_file }}",
+        remote_file: "{{ remote_blkstat_log_file }}" }
 ...
