@@ -108,7 +108,7 @@
         pid_file: "{{ memstat_pid_file }}" }
 
 - name: ({{ notes }}) get the parent device ID of device {{ device_name }}
-  command: "{{ role_path }}/majmin2dev.sh {{ device_name }}"
+  command: "{{ role_path }}/files/majmin2dev.sh {{ device_name }}"
   register: comm_res
   changed_when: False
 
