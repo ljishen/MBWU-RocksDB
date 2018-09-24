@@ -112,6 +112,12 @@
   register: comm_res
   changed_when: False
 
+- name: ({{ notes }}) disable all kernel tracing and clear the trace buffers
+  become: yes
+  # The `trace-cmd record` process will not start if we combine this and
+  # the `trace-cmd record` command together.
+  command: trace-cmd reset
+
 - name: ({{ notes }}) start to trace the block events for device {{ comm_res.stdout_lines[0] }}
   become: yes
   # A very good article: "trace-cmd: A front-end for Ftrace"
@@ -119,18 +125,19 @@
   # Some definitions of the block I/O events:
   #   https://www.ibm.com/developerworks/community/blogs/58e72888-6340-46ac-b488-d31aa4058e9c/entry/exploring_the_linux_storage_path_tracing_block_i_o_kernel_events?lang=en_us
   shell: >
-    trace-cmd reset && trace-cmd record
+    nohup trace-cmd record
     -o {{ remote_blkstat_log_file }}
     --date
     -e block:block_rq_issue
     -f "dev == {{ comm_res.stdout_lines[1] }}"
     -e block:block_rq_complete
-    -f "dev == {{ comm_res.stdout_lines[1] }}" &
+    -f "dev == {{ comm_res.stdout_lines[1] }}"
+    < /dev/null > {{ workdir }}/nohup.out 2>&1 &
     echo $! > {{ blkstat_pid_file }}
 
 - name: ({{ notes }}) pause to wait for the tracer to start
   pause:
-    seconds: 6
+    seconds: 7
 
 - block:
     - name: ({{ notes }}) deploy the RocksDB options file
@@ -196,7 +203,7 @@
 
 - name: ({{ notes }}) pause to wait all the performance statistics collecting processes finished
   pause:
-    seconds: 15
+    seconds: 10
 
 - include_tasks: backup_file.yml
   vars:

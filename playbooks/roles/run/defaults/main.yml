@@ -34,6 +34,6 @@ local_memstat_log_file: "{{ local_output_dir }}/{{ memstat_log_filename }}"
 remote_memstat_log_file: "{{ remote_output_dir }}/{{ memstat_log_filename }}"
 
 blkstat_pid_file: "{{ workdir }}/blkstat.pid"
-blkstat_log_filename: "blkstat.log"
+blkstat_log_filename: "blkstat.dat"
 local_blkstat_log_file: "{{ local_output_dir }}/{{ blkstat_log_filename }}"
 remote_blkstat_log_file: "{{ remote_output_dir }}/{{ blkstat_log_filename }}"
