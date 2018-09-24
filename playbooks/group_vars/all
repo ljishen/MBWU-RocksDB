@@ -24,6 +24,9 @@ ycsb_run_workloads: "{{ playbook_dir }}/roles/run/templates/myworkload"
 # state, this number can be set to a higher number, e.g. 100.
 maximum_rounds: 25
 
+# The block request tracer may have overhead
+trace_block_rq: True
+
 
 #################### RocksDB Properties ####################
 

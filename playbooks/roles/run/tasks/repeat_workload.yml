@@ -107,37 +107,39 @@
         remote_log_file: "{{ remote_memstat_log_file }}",
         pid_file: "{{ memstat_pid_file }}" }
 
-- name: ({{ notes }}) get the parent device ID of device {{ device_name }}
-  command: "{{ role_path }}/files/majmin2dev.sh {{ device_name }}"
-  register: comm_res
-  changed_when: False
+- block:
+    - name: ({{ notes }}) get the parent device ID of device {{ device_name }}
+      command: "{{ role_path }}/files/majmin2dev.sh {{ device_name }}"
+      register: comm_res
+      changed_when: False
 
-- name: ({{ notes }}) disable all kernel tracing and clear the trace buffers
-  become: yes
-  # The `trace-cmd record` process will not start if we combine this and
-  # the `trace-cmd record` command together.
-  command: trace-cmd reset
+    - name: ({{ notes }}) disable all kernel tracing and clear the trace buffers
+      become: yes
+      # The `trace-cmd record` process will not start if we combine this and
+      # the `trace-cmd record` command together.
+      command: trace-cmd reset
 
-- name: ({{ notes }}) start to trace the block events for device {{ comm_res.stdout_lines[0] }}
-  become: yes
-  # A very good article: "trace-cmd: A front-end for Ftrace"
-  #   https://lwn.net/Articles/410200/
-  # Some definitions of the block I/O events:
-  #   https://www.ibm.com/developerworks/community/blogs/58e72888-6340-46ac-b488-d31aa4058e9c/entry/exploring_the_linux_storage_path_tracing_block_i_o_kernel_events?lang=en_us
-  shell: >
-    nohup trace-cmd record
-    -o {{ remote_blkstat_log_file }}
-    --date
-    -e block:block_rq_issue
-    -f "dev == {{ comm_res.stdout_lines[1] }}"
-    -e block:block_rq_complete
-    -f "dev == {{ comm_res.stdout_lines[1] }}"
-    < /dev/null > {{ workdir }}/nohup.out 2>&1 &
-    echo $! > {{ blkstat_pid_file }}
+    - name: ({{ notes }}) start to trace the block events for device {{ comm_res.stdout_lines[0] }}
+      become: yes
+      # A very good article: "trace-cmd: A front-end for Ftrace"
+      #   https://lwn.net/Articles/410200/
+      # Some definitions of the block I/O events:
+      #   https://www.ibm.com/developerworks/community/blogs/58e72888-6340-46ac-b488-d31aa4058e9c/entry/exploring_the_linux_storage_path_tracing_block_i_o_kernel_events?lang=en_us
+      shell: >
+        nohup trace-cmd record
+        -o {{ remote_blkstat_log_file }}
+        --date
+        -e block:block_rq_issue
+        -f "dev == {{ comm_res.stdout_lines[1] }}"
+        -e block:block_rq_complete
+        -f "dev == {{ comm_res.stdout_lines[1] }}"
+        < /dev/null > {{ workdir }}/nohup.out 2>&1 &
+        echo $! > {{ blkstat_pid_file }}
 
-- name: ({{ notes }}) pause to wait for the tracer to start
-  pause:
-    seconds: 7
+    - name: ({{ notes }}) pause to wait for the tracer to start
+      pause:
+        seconds: 7
+  when: trace_block_rq
 
 - block:
     - name: ({{ notes }}) deploy the RocksDB options file
@@ -203,7 +205,8 @@
 
 - name: ({{ notes }}) pause to wait all the performance statistics collecting processes finished
   pause:
-    seconds: 10
+    minutes: 1
+  when: trace_block_rq
 
 - include_tasks: backup_file.yml
   vars:
@@ -214,6 +217,10 @@
         remote_file: "{{ remote_cpustat_log_file }}" }
     - { local_file: "{{ local_memstat_log_file }}",
         remote_file: "{{ remote_memstat_log_file }}" }
-    - { local_file: "{{ local_blkstat_log_file }}",
-        remote_file: "{{ remote_blkstat_log_file }}" }
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_blkstat_log_file }}"
+    remote_file: "{{ remote_blkstat_log_file }}"
+  when: trace_block_rq
 ...
