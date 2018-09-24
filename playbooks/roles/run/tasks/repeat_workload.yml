@@ -119,15 +119,14 @@
   # Some definitions of the block I/O events:
   #   https://www.ibm.com/developerworks/community/blogs/58e72888-6340-46ac-b488-d31aa4058e9c/entry/exploring_the_linux_storage_path_tracing_block_i_o_kernel_events?lang=en_us
   shell: >
-    trace-cmd reset &&
-    trace-cmd record
+    trace-cmd reset && trace-cmd record
       -o {{ remote_blkstat_log_file }}
       --date
       -e block:block_rq_issue
       -f "dev == {{ comm_res.stdout_lines[1] }}"
       -e block:block_rq_complete
-      -f "dev == {{ comm_res.stdout_lines[1] }}"
-    & echo $! > {{ blkstat_pid_file }}
+      -f "dev == {{ comm_res.stdout_lines[1] }}" &
+    echo $! > {{ blkstat_pid_file }}
 
 - block:
     - name: ({{ notes }}) deploy the RocksDB options file
