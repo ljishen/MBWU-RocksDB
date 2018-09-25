@@ -1,6 +1,11 @@
 ---
 - block:
 
+    - name: ({{ notes }}) free the slab objects and pagecache
+      # See https://www.kernel.org/doc/Documentation/sysctl/vm.txt
+      become: yes
+      shell: sync; echo 3 > /proc/sys/vm/drop_caches
+
     - name: ({{ notes }}) get the stats of device {{ device_name }} (before)
       # We don't want to interfere the stats of the block device so just not to
       # write the result directly to file here.
