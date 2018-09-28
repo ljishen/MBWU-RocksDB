@@ -4,7 +4,7 @@ fieldcount={{ fieldcount }}
 
 # According to the serialization method for combining all the fields in the RocksDB binding,
 # RocksDB value = bytes of the length of the field name (4 bytes) +
-#                 bytes of the field key ("field" + index) +
+#                 bytes of the field name ("field" + index) +
 #                 bytes of the length of the field value (4 bytes) +
 #                 bytes of the field value (this is the fieldlength)
 # https://github.com/ljishen/YCSB/blob/master/rocksdb/src/main/java/com/yahoo/ycsb/db/rocksdb/RocksDBClient.java#L318
