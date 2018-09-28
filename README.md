@@ -31,7 +31,7 @@ ansible-playbook playbooks/main.yml [-v]
 #       separated by comma. Each of them could be any of the YCSB core
 #       workload[a-f], or the absolute path of a user-defined workload
 #       parameter file. By default, it is the
-#       {{ playbook_dir }}/roles/run/templates/myworkload
+#       {{ playbook_dir }}/roles/run/templates/myworkloada
 #
 # Options:
 #   -v  Show debug messages while running playbook

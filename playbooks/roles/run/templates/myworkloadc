@@ -2,7 +2,7 @@
 
 # You can overwite any parameters from workloada here
 
-threadcount=1
+threadcount=21
 
 # The data size is approximately 100GB
 recordcount={{ (100 * 1024 * 1024 * 1024 / (max_value_sz_bytes + key_sz_bytes)) | int }}
