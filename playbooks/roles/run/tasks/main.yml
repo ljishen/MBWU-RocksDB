@@ -18,6 +18,7 @@
 
 - include_tasks: repeat_workload.yml
   vars:
+    rocksdb_data_dir: "{{ mountpoint }}/{{ rocksdb_data_dirname }}"
     cur_workload: "{{ cur_workload_path | basename }}"
     notes: "{{ cur_workload }}"
   loop: "{{ run_workloads }}"

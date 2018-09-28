@@ -1,6 +1,39 @@
 ---
 - block:
 
+    - block:
+        - name: ({{ notes }}) ensure the presence of RocksDB data dir {{ rocksdb_data_dir }}
+          become: yes
+          file:
+            owner: "{{ ansible_user }}"
+            path: "{{ rocksdb_data_dir }}"
+            state: "{{ item }}"
+          loop:
+            - absent
+            - directory
+
+        - name: ({{ notes }}) load the data
+          shell: >
+            bin/ycsb load rocksdb -s
+            -P {{ remote_workload_file }}
+            -p rocksdb.dir={{ rocksdb_data_dir }}
+            -p options.file={{ remote_rocksdb_options_file }}
+            > {{ remote_load_output_file }} 2>&1
+          args:
+            chdir: "{{ ycsb_dir }}"
+          environment:
+            PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+
+        - include_tasks: backup_file.yml
+          vars:
+            local_file: "{{ local_load_output_file }}"
+            remote_file: "{{ remote_load_output_file }}"
+      when: cur_load_data
+
+    - set_fact:
+        cur_load_data: False
+      when: load_data_once
+
     - name: ({{ notes }}) free the slab objects and pagecache
       # See https://www.kernel.org/doc/Documentation/sysctl/vm.txt
       become: yes
@@ -17,7 +50,7 @@
         bin/ycsb run rocksdb -s
         -P {{ remote_workload_file }}
         -p rocksdb.dir={{ rocksdb_data_dir }}
-        > {{ remote_output_file }} 2>&1
+        > {{ remote_transactions_output_file }} 2>&1
       args:
         chdir: "{{ ycsb_dir }}"
       environment:
@@ -29,8 +62,8 @@
 
     - include_tasks: backup_file.yml
       vars:
-        local_file: "{{ local_output_file }}"
-        remote_file: "{{ remote_output_file }}"
+        local_file: "{{ local_transactions_output_file }}"
+        remote_file: "{{ remote_transactions_output_file }}"
 
     - name: ({{ notes }}) save device stats to files
       copy:
@@ -54,7 +87,7 @@
 
     - name: ({{ notes }}) extract the throughput value from output
       command: >
-        grep -oP '\[OVERALL\],\s+Throughput\(ops/sec\),\s+\K[\d.]+' {{ remote_output_file }}
+        grep -oP '\[OVERALL\],\s+Throughput\(ops/sec\),\s+\K[\d.]+' {{ remote_transactions_output_file }}
       register: comm_res
 
     - name: ({{ notes }}) save throughput for steady state detection

@@ -28,7 +28,7 @@ maximum_rounds: 25
 trace_block_rq: False
 
 
-#################### RocksDB Properties ####################
+######################### RocksDB Properties #########################
 
 # You can use your own RocksDB options file on the originating/master machine
 # by passing variables through the command line
@@ -46,8 +46,15 @@ key_sz_bytes: 16
 max_value_sz_bytes: 8192
 
 
-#################### Debug Properties ####################
+######################### Debug Properties  #########################
 
-# Whether to run the YCSB loading phase
-load_data: True
+# Whether to run the YCSB loading phase only in the first round (yes), or in
+# every round (no).
+# For read-only workload, you can cut down the test duration by changing this
+# option to 'yes' since no data will be updated during the transactions phase.
+load_data_once: no
+
+# Whether to run the YCSB loading phase. If set to no, the loading phase will
+# be toally skipped without regarding the value of 'load_data_once'.
+load_data: yes
 ...

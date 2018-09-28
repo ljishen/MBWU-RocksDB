@@ -8,8 +8,6 @@ fieldcount: 1
 measurement_window_size: 5
 
 
-rocksdb_data_dir: "{{ mountpoint }}/{{ rocksdb_data_dirname }}"
-
 local_output_dir: "{{ inventory_dir }}/analysis/data/{{ inventory_hostname }}/output_{{ cur_workload }}"
 remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"
 
@@ -19,9 +17,13 @@ remote_workload_file: "{{ remote_output_dir }}/{{ cur_workload }}"
 local_rocksdb_options_file: "{{ local_output_dir }}/{{ rocksdb_options_file | basename }}"
 remote_rocksdb_options_file: "{{ remote_output_dir }}/{{ rocksdb_options_file | basename }}"
 
-output_filename: "load.dat"
-local_output_file: "{{ local_output_dir }}/{{ output_filename }}"
-remote_output_file: "{{ remote_output_dir }}/{{ output_filename }}"
+load_filename: "load_round{{ cur_round }}.dat"
+local_load_output_file: "{{ local_output_dir }}/{{ load_filename }}"
+remote_load_output_file: "{{ remote_output_dir }}/{{ load_filename }}"
+
+transactions_filename: "transactions_round{{ cur_round }}.dat"
+local_transactions_output_file: "{{ local_output_dir }}/{{ transactions_filename }}"
+remote_transactions_output_file: "{{ remote_output_dir }}/{{ transactions_filename }}"
 
 cpustat_pid_file: "{{ workdir }}/cpustat.pid"
 cpustat_log_filename: "cpustat.log"

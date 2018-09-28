@@ -28,15 +28,19 @@
       failed_when: stat_res.stat.isreg is not defined or not stat_res.stat.isreg
   when: not load_data
 
-- name: ({{ notes }}) ensure the presence of RocksDB data dir {{ rocksdb_data_dir }}
-  become: yes
-  file:
-    owner: "{{ ansible_user }}"
-    path: "{{ rocksdb_data_dir }}"
-    state: "{{ item }}"
-  loop:
-    - absent
-    - directory
+- block:
+    - name: ({{ notes }}) deploy the RocksDB options file
+      template:
+        backup: yes
+        dest: "{{ remote_rocksdb_options_file }}"
+        force: yes
+        owner: "{{ ansible_user }}"
+        src: "{{ rocksdb_options_file }}"
+
+    - include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_rocksdb_options_file }}"
+        remote_file: "{{ remote_rocksdb_options_file }}"
   when: load_data
 
 - name: ({{ notes }}) copy user-defined workload parameter file to {{ local_tmp_data_dir }}
@@ -141,39 +145,8 @@
         seconds: 7
   when: trace_block_rq
 
-- block:
-    - name: ({{ notes }}) deploy the RocksDB options file
-      template:
-        backup: yes
-        dest: "{{ remote_rocksdb_options_file }}"
-        force: yes
-        owner: "{{ ansible_user }}"
-        src: "{{ rocksdb_options_file }}"
-
-    - include_tasks: backup_file.yml
-      vars:
-        local_file: "{{ local_rocksdb_options_file }}"
-        remote_file: "{{ remote_rocksdb_options_file }}"
-
-    - name: ({{ notes }}) load the data
-      shell: >
-        bin/ycsb load rocksdb -s
-        -P {{ remote_workload_file }}
-        -p rocksdb.dir={{ rocksdb_data_dir }}
-        -p options.file={{ remote_rocksdb_options_file }}
-        > {{ remote_output_file }} 2>&1
-      args:
-        chdir: "{{ ycsb_dir }}"
-      environment:
-        PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
-
-    - include_tasks: backup_file.yml
-      vars:
-        local_file: "{{ local_output_file }}"
-        remote_file: "{{ remote_output_file }}"
-  when: load_data
-
 - set_fact:
+    cur_load_data: "{{ load_data }}"
     outer_notes_repeat: "{{ notes }}"
     tracking_values: []
     steady_state: False
@@ -181,7 +154,6 @@
 - include_tasks: do_run.yml
   vars:
     notes: "{{ outer_notes_repeat }}, round {{ cur_round }}"
-    output_filename: "transactions_round{{ cur_round }}.dat"
 
     # flag 'b' for before the workload execution
     # flag 'a' for after the workload execution
