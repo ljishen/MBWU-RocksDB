@@ -4,9 +4,12 @@
 
 threadcount=1
 
-# The data size is approximately 100GB
-recordcount={{ (100 * 1024 * 1024 * 1024 / (max_value_sz_bytes + key_sz_bytes)) | int }}
+{% set db_size_gb = 65 -%}
+{% set db_capacity = db_size_gb * 1024 * 1024 * 1024 / (max_value_sz_bytes + key_sz_bytes) -%}
+
+# The database size is approximately {{ db_size_gb }} GB
+recordcount={{ db_capacity | int }}
 
 # The number of operations is about 75% of the recordcount
-operationcount={{ (0.75 * 100 * 1024 * 1024 * 1024 / (max_value_sz_bytes + key_sz_bytes)) | int }}
+operationcount={{ (0.75 * db_capacity) | int }}
 

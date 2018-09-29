@@ -3,11 +3,12 @@
 fieldcount={{ fieldcount }}
 
 # According to the serialization method for combining all the fields in the RocksDB binding,
-# RocksDB value = bytes of the length of the field name (4 bytes) +
-#                 bytes of the field name ("field" + index) +
-#                 bytes of the length of the field value (4 bytes) +
-#                 bytes of the field value (this is the fieldlength)
-# https://github.com/ljishen/YCSB/blob/master/rocksdb/src/main/java/com/yahoo/ycsb/db/rocksdb/RocksDBClient.java#L318
+# RocksDB value = (bytes of the length of the field name (4 bytes) +
+#                  bytes of the field name ("field" + index) +
+#                  bytes of the length of the field value (4 bytes) +
+#                  bytes of the field value (this is the fieldlength))
+#                 * fieldcount
+# https://github.com/ljishen/YCSB/blob/master/rocksdb/src/main/java/com/yahoo/ycsb/db/rocksdb/RocksDBClient.java#L326
 fieldlength={{ max_value_sz_bytes - 4 * 2 - (5 + (fieldcount  - 1) | string | length) }}
 
 # For example for row 5, with zeropadding=1 you get 'user5' key and with
