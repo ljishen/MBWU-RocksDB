@@ -2,7 +2,7 @@
 
 # You can overwite any parameters from workloada here
 
-threadcount=5
+threadcount=20
 
 {% set db_size_gb = 75 -%}
 {% set db_capacity = db_size_gb * 1024 * 1024 * 1024 / (max_value_sz_bytes + key_sz_bytes) -%}
