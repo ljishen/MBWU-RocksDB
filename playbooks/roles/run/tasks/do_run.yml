@@ -24,6 +24,9 @@
           environment:
             PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
 
+        - name: ({{ notes }}) print the size of database dir after loaded
+          command: du -BK {{ rocksdb_data_dir }}
+
         - include_tasks: backup_file.yml
           vars:
             local_file: "{{ local_load_output_file }}"
