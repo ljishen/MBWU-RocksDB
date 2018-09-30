@@ -10,6 +10,6 @@ threadcount=5
 # The database size is approximately {{ db_size_gb }} GB
 recordcount={{ db_capacity | int }}
 
-# The number of operations is the same of the recordcount
+# The number of operations is the same as the recordcount
 operationcount={{ db_capacity | int }}
 
