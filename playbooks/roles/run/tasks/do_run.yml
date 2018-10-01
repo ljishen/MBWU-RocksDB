@@ -135,10 +135,18 @@
           pause:
             seconds: 30
 
+        - name: ({{ notes }}) archive the blkstat log file
+          archive:
+            format: gz
+            owner: "{{ ansible_user }}"
+            path: "{{ remote_blkstat_log_file }}"
+            remove: no
+          register: archive_res
+
         - include_tasks: backup_file.yml
           vars:
-            local_file: "{{ local_blkstat_log_file }}"
-            remote_file: "{{ remote_blkstat_log_file }}"
+            local_file: "{{ local_output_dir }}{{ archive_res.dest | basename }}"
+            remote_file: "{{ archive_res.dest }}"
       when: cur_trace_block_rq
 
     - set_fact:
