@@ -145,7 +145,7 @@
 
         - include_tasks: backup_file.yml
           vars:
-            local_file: "{{ local_output_dir }}{{ archive_res.dest | basename }}"
+            local_file: "{{ local_output_dir }}/{{ archive_res.dest | basename }}"
             remote_file: "{{ archive_res.dest }}"
       when: cur_trace_block_rq
 
