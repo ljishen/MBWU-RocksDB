@@ -141,6 +141,7 @@
   loop:
     - "{{ cpustat_pid_file }}"
     - "{{ memstat_pid_file }}"
+    - "{{ iostat_pid_file }}"
 
 - include_tasks: backup_file.yml
   vars:
