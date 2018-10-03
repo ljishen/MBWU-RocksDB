@@ -90,6 +90,7 @@
   loop:
     - "{{ cpustat_pid_file }}"
     - "{{ memstat_pid_file }}"
+    - "{{ iostat_pid_file }}"
 
 - name: ({{ notes }}) start to collect system performance statistics
   # we use stdbuf to turn off the buffering of the output redirection.
@@ -108,6 +109,9 @@
     - { command: vmstat --one-header --wide --unit K --timestamp 3,
         remote_log_file: "{{ remote_memstat_log_file }}",
         pid_file: "{{ memstat_pid_file }}" }
+    - { command: "iostat -dktxyzH -g {{ device_name }} 3",
+        remote_log_file: "{{ remote_iostat_log_file }}",
+        pid_file: "{{ iostat_pid_file }}" }
 
 - set_fact:
     cur_load_data: "{{ load_data }}"
@@ -147,4 +151,6 @@
         remote_file: "{{ remote_cpustat_log_file }}" }
     - { local_file: "{{ local_memstat_log_file }}",
         remote_file: "{{ remote_memstat_log_file }}" }
+    - { local_file: "{{ local_iostat_log_file }}",
+        remote_file: "{{ remote_iostat_log_file }}" }
 ...
