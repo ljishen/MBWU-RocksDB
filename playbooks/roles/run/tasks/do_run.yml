@@ -98,7 +98,7 @@
         PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
 
     - name: ({{ notes }}) get the stats of device {{ device_name }} (after)
-      shell: "{{ device_stats_command }}"
+      shell: "sync; {{ device_stats_command }}"
       register: after_stats_res
 
     - include_tasks: backup_file.yml
