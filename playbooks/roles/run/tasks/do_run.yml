@@ -48,7 +48,7 @@
 
     - block:
         - name: ({{ notes }}) get the parent device ID of device {{ device_name }}
-          command: "{{ role_path }}/files/majmin2dev.sh {{ device_name }}"
+          command: "{{ role_path }}/files/devname2id.sh {{ device_name }}"
           register: comm_res
           changed_when: False
 

@@ -4,7 +4,7 @@ set -eu -o pipefail
 
 if [ "$#" -ne 1 ]; then
     cat <<-ENDOFMESSAGE
-Usage: ./majmin2dev.sh DEVICE_NAME
+Usage: $0 DEVICE_NAME
 
 This script converts the device name of a partition to the device ID of its
 parent held by the type dev_t, which can be then used to filter the device in
@@ -14,7 +14,7 @@ DEVICE_NAME:
     Note that this is the device name of a partition.
 
 For example:
-    ./majmin2dev.sh /dev/sda1
+    $0 /dev/sda1
 
 See
 https://linux.die.net/man/3/minor
