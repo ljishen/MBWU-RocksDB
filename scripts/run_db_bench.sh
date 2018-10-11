@@ -11,9 +11,12 @@ G=$(( 1024 * M ))
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-db_on_device_name="${DB_ON_DEVICE_NAME:-sda1}"
-db_on_device_fullname="/dev/$db_on_device_name"
-data_dir="${DATA_DIR:-/mnt/sda1/rocksdb_data}"
+# Make sure that it has to be the strictly specified mountpoint of the
+# target device.
+mountpoint="${MOUNTPOINT:-/mnt/sda1}"
+
+data_dir="$mountpoint"/rocksdb_data
+device_fullname="$(findmnt --noheadings --output SOURCE --mountpoint "$mountpoint")"
 
 num_keys="${NUM_KEYS:-$(( 1 * M ))}"
 key_size="${KEY_SIZE:-16}"
@@ -34,7 +37,7 @@ BLKSTAT_PIDFILE=blkstat.pid
 DISKSTATS_LOG_B="$OUTPUT_BASE"/diskstats_b.log     # log the before stats
 DISKSTATS_LOG_A="$OUTPUT_BASE"/diskstats_a.log     # log the after stats
 
-device_info="$("$REPO_DIR"/playbooks/roles/run/files/devname2id.sh "$db_on_device_fullname")"
+device_info="$("$REPO_DIR"/playbooks/roles/run/files/devname2id.sh "$device_fullname")"
 pdevice_name="$(echo "$device_info" | head -1)"
 pdevice_id="$(echo "$device_info" | tail -1)"
 
@@ -93,12 +96,11 @@ DB_BENCH_OPTIONS:
 IMPORTANT NOTICE:
     Please make sure that the current git repository:
         $REPO_DIR
-    does NOT reside in any partition of $pdevice_name
+    does NOT reside in any partition of device $pdevice_name
 
 REQUIRED ENVIRONMENT VARIABLE:
     ROCKSDB_DIR=${ROCKSDB_DIR:-undefined}
-    DB_ON_DEVICE_NAME=${DB_ON_DEVICE_NAME:-$db_on_device_name}
-    DATA_DIR=${DATA_DIR:-$data_dir}
+    MOUNTPOINT=${MOUNTPOINT:-$mountpoint}
 ENDOFMESSAGE
     exit
 fi
@@ -250,7 +252,6 @@ db_bench_command="$db_bench_exe \
     --hard_pending_compaction_bytes_limit=$(( 256 * G )) \
     --fifo_compaction_allow_compaction=false \
     --fifo_compaction_max_table_files_size_mb=$(( 1 * K )) \
-    --min_write_buffer_number_to_merge=2 \
     --num_levels=7 \
     --block_size=$(( 8 * K )) \
     $db_bench_command \
@@ -282,7 +283,9 @@ function print_var() {
 
 newline_print "start benchmark $run_benchmark at $(date)" | tee "$DB_BENCH_LOG"
 vars_to_print+=(
-    db_on_device_fullname
+    data_dir
+    device_fullname
+    pdevice_name
     db_bench_command)
 
 print_separator
@@ -293,7 +296,7 @@ print_separator
 
 pkill -SIGTERM --pidfile "$IOSTAT_PIDFILE" &> /dev/null || true
 rm --force "$IOSTAT_PIDFILE"
-nohup stdbuf -oL -eL iostat -dktxyzH -g "$db_on_device_fullname" 3 < /dev/null > "$IOSTAT_LOG" 2>&1 &
+nohup stdbuf -oL -eL iostat -dktxyzH -g "$device_fullname" 3 < /dev/null > "$IOSTAT_LOG" 2>&1 &
 echo $! > "$IOSTAT_PIDFILE"
 newline_print "iostat daemon is running (PID=$(cat $IOSTAT_PIDFILE))"
 
@@ -327,14 +330,16 @@ if [ "$do_trace_blk_rq" = true ]; then
     sleep 7
 fi
 
-newline_print "saving stats for disk $db_on_device_fullname (before)"
-grep "$db_on_device_name" /proc/diskstats > "$DISKSTATS_LOG_B"
+device_name="$(basename "$device_fullname")"
+
+newline_print "saving stats for disk $device_fullname (before)"
+grep "$device_name" /proc/diskstats > "$DISKSTATS_LOG_B"
 
 echo | tee -a "$DB_BENCH_LOG"
 eval "$db_bench_command"
 
-newline_print "saving stats for disk $db_on_device_fullname (after)"
-sync; grep "$db_on_device_name" /proc/diskstats > "$DISKSTATS_LOG_A"
+newline_print "saving stats for disk $device_fullname (after)"
+sync; grep "$device_name" /proc/diskstats > "$DISKSTATS_LOG_A"
 
 newline_print "stopping iostat daemon"
 pkill -SIGTERM --pidfile "$IOSTAT_PIDFILE" || true
