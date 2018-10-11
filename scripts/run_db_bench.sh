@@ -18,7 +18,7 @@ mountpoint="${MOUNTPOINT:-/mnt/sda1}"
 data_dir="$mountpoint"/rocksdb_data
 device_fullname="$(findmnt --noheadings --output SOURCE --mountpoint "$mountpoint")"
 
-num_keys="${NUM_KEYS:-$(( 1 * M ))}"
+num_keys="${NUM_KEYS:-$(( 10 * M ))}"
 key_size="${KEY_SIZE:-16}"
 value_size="${VALUE_SIZE:-$(( 8 * K ))}"
 
@@ -72,11 +72,12 @@ BENCHMARK:
         be sure to fill a fresh db with this operator first and run the
         benchmark only on this new db.
 
-        This workload is similar to the YCSB workloada. The first difference is
-        that the distribution of the selected keys is uniform distribution
-        instead of zipfian distribution that used in YCSB. Another difference
-        is that the atomic guarantee of the read-modify-write is handled by the
-        RocksDB merge operator instead of YCSB by the client.
+        This workload is similar to the YCSB workloada or workloadb (by
+        changing the merge_read_ratio=5) with two major differences. The first
+        one is that the distribution of the selected keys is uniform
+        distribution instead of zipfian distribution that used in YCSB. The
+        other difference is that the atomic guarantee of the read-modify-write
+        is handled by the RocksDB merge operator instead of YCSB by the client.
 
     mergerandom:
         Similar to readrandommergerandom except that it's all merge.
@@ -281,11 +282,15 @@ function print_var() {
     echo "$1=$val" | tee -a "$DB_BENCH_LOG"
 }
 
-newline_print "start benchmark $run_benchmark at $(date)" | tee "$DB_BENCH_LOG"
+daemon_report_interval_sec="${DAEMON_REPORT_INTERVAL_SEC:-3}"
+
+start_date="$(date +%F_%T)"
+newline_print "start benchmark $run_benchmark at $start_date" | tee "$DB_BENCH_LOG"
 vars_to_print+=(
     data_dir
     device_fullname
     pdevice_name
+    daemon_report_interval_sec
     db_bench_command)
 
 print_separator
@@ -294,15 +299,42 @@ for v in "${vars_to_print[@]}"; do
 done
 print_separator
 
-pkill -SIGTERM --pidfile "$IOSTAT_PIDFILE" &> /dev/null || true
-rm --force "$IOSTAT_PIDFILE"
-nohup stdbuf -oL -eL iostat -dktxyzH -g "$device_fullname" 3 < /dev/null > "$IOSTAT_LOG" 2>&1 &
+
+function cleanup_daemons() {
+    if [ -f "$IOSTAT_PIDFILE" ]; then
+        newline_print "stopping iostat daemon"
+
+        # The exit code is not 0 if the PID in pidfile is not found.
+        pkill -SIGTERM --pidfile "$IOSTAT_PIDFILE" || true
+
+        rm "$IOSTAT_PIDFILE"
+    fi
+
+    if [ -f "$MPSTAT_PIDFILE" ]; then
+        newline_print "stopping mpstat daemon"
+        pkill -SIGINT --pidfile "$MPSTAT_PIDFILE" || true
+        rm "$MPSTAT_PIDFILE"
+    fi
+
+    if [ -f "$BLKSTAT_PIDFILE" ]; then
+        newline_print "stopping blkstat daemon"
+        pkill -SIGINT --pidfile "$BLKSTAT_PIDFILE" &> /dev/null || true
+
+        newline_print "pause 20 seconds to wait for the tracer to finish..."
+        sleep 20
+
+        rm "$BLKSTAT_PIDFILE"
+    fi
+}
+trap cleanup_daemons EXIT
+
+cleanup_daemons
+
+nohup stdbuf -oL -eL iostat -dktxyzH -g "$device_fullname" "$daemon_report_interval_sec" < /dev/null > "$IOSTAT_LOG" 2>&1 &
 echo $! > "$IOSTAT_PIDFILE"
 newline_print "iostat daemon is running (PID=$(cat $IOSTAT_PIDFILE))"
 
-pkill -SIGTERM --pidfile "$MPSTAT_PIDFILE" &> /dev/null || true
-rm --force "$MPSTAT_PIDFILE"
-nohup stdbuf -oL -eL mpstat -P ALL 3 < /dev/null > "$MPSTAT_LOG" 2>&1 &
+nohup stdbuf -oL -eL mpstat -P ALL "$daemon_report_interval_sec" < /dev/null > "$MPSTAT_LOG" 2>&1 &
 echo $! > "$MPSTAT_PIDFILE"
 newline_print "mpstat daemon is running (PID=$(cat $MPSTAT_PIDFILE))"
 
@@ -320,11 +352,11 @@ if [ "$do_trace_blk_rq" = true ]; then
         -e block:block_rq_complete \
         -f 'dev == $pdevice_id' \
         < /dev/null > nohup.out 2>&1 &"
-    newline_print "$blk_trace_command" | tee -a "$DB_BENCH_LOG"
+    newline_print "block events tracer command: $blk_trace_command" | tee -a "$DB_BENCH_LOG"
 
     eval "$blk_trace_command"
     echo $! > "$BLKSTAT_PIDFILE"
-    newline_print "starting the block events for device $pdevice_name (PID=$(cat $BLKSTAT_PIDFILE))"
+    newline_print "starting to trace the block events for device $pdevice_name (PID=$(cat $BLKSTAT_PIDFILE))"
 
     newline_print "pause 7 seconds to wait for the tracer to start..."
     sleep 7
@@ -341,30 +373,16 @@ eval "$db_bench_command"
 newline_print "saving stats for disk $device_fullname (after)"
 sync; grep "$device_name" /proc/diskstats > "$DISKSTATS_LOG_A"
 
-newline_print "stopping iostat daemon"
-pkill -SIGTERM --pidfile "$IOSTAT_PIDFILE" || true
-rm --force "$IOSTAT_PIDFILE"
-
-newline_print "stopping mpstat daemon"
-pkill -SIGINT --pidfile "$MPSTAT_PIDFILE" || true
-rm --force "$MPSTAT_PIDFILE"
+cleanup_daemons
 
 if [ "$do_trace_blk_rq" = true ]; then
-    newline_print "stopping blkstat daemon"
-    pkill -SIGINT --pidfile "$BLKSTAT_PIDFILE" &> /dev/null || true
-
-    newline_print "pause 20 seconds to wait for the tracer to finish..."
-    sleep 20
-
-    rm --force "$BLKSTAT_PIDFILE"
-
     if command -v gzip &> /dev/null; then
         BLKSTAT_LOG_GZ="${BLKSTAT_LOG}".gz
         newline_print "compressing the output from block event tracer to ${BLKSTAT_LOG_GZ}"
         gzip --force --keep --name "${BLKSTAT_LOG}"
     else
         newline_print "did not compress the output from block event tracer \
-            because program 'gzip' is not found."
+            because the program 'gzip' is not found."
     fi
 
     IOSZDIST_LOG="$OUTPUT_BASE"/ioszdist.log
@@ -374,7 +392,7 @@ if [ "$do_trace_blk_rq" = true ]; then
 fi
 
 if [[ $* == *"--backup "* ]]; then
-    backup_dir="$OUTPUT_BASE/$(date +%F_%T)"
+    backup_dir="$OUTPUT_BASE"/"$start_date"
     newline_print "backuping files to dir $backup_dir"
     mkdir "$backup_dir"
     mv "$DB_BENCH_LOG" \
