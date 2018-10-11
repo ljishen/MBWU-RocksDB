@@ -45,7 +45,8 @@ Usage: $0 [--trace_blk_rq] [--backup] BENCHMARK [DB_BENCH_OPTIONS]
 This script must be run as root.
 
 BENCHMARK:
-    Currently available benchmarks: fillseq, readrandom, readrandommergerandom.
+    Currently available benchmarks:
+        fillseq, readrandom, readrandommergerandom, mergerandom.
     It could also be any of these meta operations on an existing db:
         stats, levelstats, sstables, count_only.
 
@@ -53,19 +54,29 @@ BENCHMARK:
         Fill num_keys sequential key in async mode with 1 thread.
 
     readrandom:
-        Read about 75% of num_keys from the existing db.
-        This workload is similar to the YCSB workloadc.
+        Read operation_keys_ratio% of num_keys from the existing db.
+
+        This workload is similar to the YCSB workloadc. The only difference is
+        that the distribution of the selected keys is uniform distribution
+        instead of zipfian distribution that used in YCSB.
 
     readrandommergerandom:
-        Read or merge all keys from the existing db under merge_read_ratio
-        (default 50/50).
-        This workload is similar to the YCSB workloada. The only difference is
-        that the atomic guarantee of the read-modify-write is handled by the
-        RocksDB merge operator instead of YCSB as the client.
+        Read or merge operation_keys_ratio% of num_keys from the existing db
+        under merge_read_ratio (default 50/50).
+
         You can use a different merge operator as opposed to the default 'put'
         by appending db_bench option '-merge_operator' to the command line, but
         be sure to fill a fresh db with this operator first and run the
         benchmark only on this new db.
+
+        This workload is similar to the YCSB workloada. The first difference is
+        that the distribution of the selected keys is uniform distribution
+        instead of zipfian distribution that used in YCSB. Another difference
+        is that the atomic guarantee of the read-modify-write is handled by the
+        RocksDB merge operator instead of YCSB by the client.
+
+    mergerandom:
+        Similar to readrandommergerandom except that it's all merge.
 
 --trace_blk_rq:
     Trace the ftrace event block_rq_[issue|complete] during benchmarking.
@@ -111,7 +122,7 @@ program."
 fi
 
 do_trace_blk_rq=false
-if [[ $* =~ .*--trace_blk_rq([[:space:]]+.*|$) ]]; then
+if [[ $* == *"--trace_blk_rq "* ]]; then
     do_trace_blk_rq=true
 fi
 
@@ -161,30 +172,44 @@ fi
 
 num_threads="${NUM_THREADS:-1}"
 
+# The percentage of all keys in the db to be used in the
+# operation (read/write/merge)
+operation_keys_ratio="${OPERATION_KEYS_RATIO:-75}"
+
+vars_to_print=()
+
 if [ "$run_benchmark" = "fillseq" ]; then
     rm -rf "$data_dir" && mkdir --parents "$data_dir"
     num_threads=1
     db_bench_command="--use_existing_db=0 \
-        --benchmarks=fillseq \
         --num=$num_keys \
         --seed=$( date +%s )"
 elif [ "$run_benchmark" = "readrandom" ]; then
+    vars_to_print+=(operation_keys_ratio)
     db_bench_command="--use_existing_db=1 \
-        --benchmarks=readrandom \
         --readonly=1 \
         --num=$num_keys \
-        --reads=$(( num_keys * 75 / 100 / num_threads )) \
+        --reads=$(( num_keys * operation_keys_ratio / 100 / num_threads )) \
         --seed=$( date +%s )"
-elif [ "$run_benchmark" = "readrandommergerandom" ]; then
-    # e.g. 70 means 70% out of all read and merge operations are merges
-    merge_read_ratio="${MERGE_READ_RATIO:-50}"
+elif [ "$run_benchmark" = "readrandommergerandom" ] || \
+     [ "$run_benchmark" = "mergerandom" ]; then
+    vars_to_print+=(operation_keys_ratio)
 
     db_bench_command="--use_existing_db=1 \
-        --benchmarks=readrandommergerandom \
-        --merge_keys=$(( num_keys / num_threads )) \
-        --mergereadpercent=$merge_read_ratio \
-        --num=$num_keys \
+        --merge_keys=$num_keys \
+        --merge_operator='put' \
+        --num=$(( num_keys * operation_keys_ratio / 100 / num_threads )) \
         --seed=$( date +%s )"
+
+    if [ "$run_benchmark" = "readrandommergerandom" ]; then
+        # e.g. 70 means 70% out of all read and merge operations are merges
+        merge_read_ratio="${MERGE_READ_RATIO:-50}"
+
+        vars_to_print+=(merge_read_ratio)
+
+        db_bench_command="$db_bench_command \
+            --mergereadpercent=$merge_read_ratio"
+    fi
 else
     echo "benchmark '$run_benchmark' is not found!"
     exit 1
@@ -198,9 +223,11 @@ num_vcpus="$(nproc)"
 #   https://github.com/facebook/rocksdb/blob/master/include/rocksdb/advanced_options.h
 #   https://github.com/facebook/rocksdb/blob/master/tools/db_bench_tool.cc
 #
-# We didn't use '-options_file' from db_bench because it disallows defining
-# '-merge_operator' within the options file or through the command line.
+# We didn't use '-options_file' provided by db_bench because it limits the
+# change of some options (e.g. '-merge_operator') no matter from within the
+# options file or through the command line.
 db_bench_command="$db_bench_exe \
+    --benchmarks=$run_benchmark \
     --db=$data_dir \
     --key_size=$key_size \
     --value_size=$value_size \
@@ -218,13 +245,13 @@ db_bench_command="$db_bench_exe \
     --max_background_jobs=$num_vcpus \
     --dump_malloc_stats=true \
     --new_table_reader_for_compaction_inputs=false \
-    --compression_per_level=kNoCompression:kNoCompression:kSnappyCompression:kSnappyCompression:kSnappyCompression:kSnappyCompression:kSnappyCompression \
+    --compression_type=snappy \
     --max_write_buffer_number=6 \
     --hard_pending_compaction_bytes_limit=$(( 256 * G )) \
-    --compaction_options_fifo={allow_compaction=false;max_table_files_size=$(( 1 * G ));ttl=0;} \
+    --fifo_compaction_allow_compaction=false \
+    --fifo_compaction_max_table_files_size_mb=$(( 1 * K )) \
     --min_write_buffer_number_to_merge=2 \
     --num_levels=7 \
-    --merge_operator='put' \
     --block_size=$(( 8 * K )) \
     $db_bench_command \
     ${db_bench_extra_options[*]+"${db_bench_extra_options[*]}"} \
@@ -254,12 +281,8 @@ function print_var() {
 }
 
 newline_print "start benchmark $run_benchmark at $(date)" | tee "$DB_BENCH_LOG"
-vars_to_print=(
-    ROCKSDB_DIR
+vars_to_print+=(
     db_on_device_fullname
-    data_dir
-    key_size
-    value_size
     db_bench_command)
 
 print_separator
@@ -267,8 +290,6 @@ for v in "${vars_to_print[@]}"; do
     print_var "$v"
 done
 print_separator
-
-exit
 
 pkill -SIGTERM --pidfile "$IOSTAT_PIDFILE" &> /dev/null || true
 rm --force "$IOSTAT_PIDFILE"
@@ -347,7 +368,7 @@ if [ "$do_trace_blk_rq" = true ]; then
     rm "$OUTPUT_BASE"/events.dat "$OUTPUT_BASE"/sectors.dat
 fi
 
-if [[ $* =~ .*--backup([[:space:]]+.*|$) ]]; then
+if [[ $* == *"--backup "* ]]; then
     backup_dir="$OUTPUT_BASE/$(date +%F_%T)"
     newline_print "backuping files to dir $backup_dir"
     mkdir "$backup_dir"
