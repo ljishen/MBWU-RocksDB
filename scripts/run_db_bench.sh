@@ -16,7 +16,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 mountpoint="${MOUNTPOINT:-/mnt/sda1}"
 
 data_dir="$mountpoint"/rocksdb_data
-device_fullname="$(findmnt --noheadings --output SOURCE --mountpoint "$mountpoint")"
 
 num_keys="${NUM_KEYS:-$(( 10 * M ))}"
 key_size="${KEY_SIZE:-16}"
@@ -37,8 +36,9 @@ BLKSTAT_PIDFILE=blkstat.pid
 DISKSTATS_LOG_B="$OUTPUT_BASE"/diskstats_b.log     # log the before stats
 DISKSTATS_LOG_A="$OUTPUT_BASE"/diskstats_a.log     # log the after stats
 
+device_fullname="$(findmnt --noheadings --output SOURCE --mountpoint "$mountpoint")"
 device_info="$("$REPO_DIR"/playbooks/roles/run/files/devname2id.sh "$device_fullname")"
-pdevice_name="$(echo "$device_info" | head -1)"
+pdevice_fullname="$(echo "$device_info" | head -1)"
 pdevice_id="$(echo "$device_info" | tail -1)"
 
 if [ "$#" -lt 1 ]; then
@@ -97,7 +97,7 @@ DB_BENCH_OPTIONS:
 IMPORTANT NOTICE:
     Please make sure that the current git repository:
         $REPO_DIR
-    does NOT reside in any partition of device $pdevice_name
+    does NOT reside in any partition of device $pdevice_fullname
 
 REQUIRED ENVIRONMENT VARIABLE:
     ROCKSDB_DIR=${ROCKSDB_DIR:-undefined}
@@ -289,7 +289,7 @@ newline_print "start benchmark $run_benchmark at $start_date" | tee "$DB_BENCH_L
 vars_to_print+=(
     data_dir
     device_fullname
-    pdevice_name
+    pdevice_fullname
     daemon_report_interval_sec
     db_bench_command)
 
@@ -356,22 +356,22 @@ if [ "$do_trace_blk_rq" = true ]; then
 
     eval "$blk_trace_command"
     echo $! > "$BLKSTAT_PIDFILE"
-    newline_print "starting to trace the block events for device $pdevice_name (PID=$(cat $BLKSTAT_PIDFILE))"
+    newline_print "starting to trace the block events for device $pdevice_fullname (PID=$(cat $BLKSTAT_PIDFILE))"
 
     newline_print "pause 7 seconds to wait for the tracer to start..."
     sleep 7
 fi
 
-device_name="$(basename "$device_fullname")"
+pdevice_name="$(basename "$pdevice_fullname")"
 
-newline_print "saving stats for disk $device_fullname (before)"
-grep "$device_name" /proc/diskstats > "$DISKSTATS_LOG_B"
+newline_print "saving stats for disk $pdevice_fullname (before)"
+grep "$pdevice_name" /proc/diskstats > "$DISKSTATS_LOG_B"
 
 echo | tee -a "$DB_BENCH_LOG"
 eval "$db_bench_command"
 
-newline_print "saving stats for disk $device_fullname (after)"
-sync; grep "$device_name" /proc/diskstats > "$DISKSTATS_LOG_A"
+newline_print "saving stats for disk $pdevice_fullname (after)"
+sync; grep "$pdevice_name" /proc/diskstats > "$DISKSTATS_LOG_A"
 
 cleanup_daemons
 

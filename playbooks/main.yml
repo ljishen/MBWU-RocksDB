@@ -33,14 +33,14 @@
       ignore_errors: yes
     - name: save the source device name
       set_fact:
-        device_name: "{{ comm_res.stdout }}"
+        device_fullname: "{{ comm_res.stdout }}"
     - debug:
         msg: >
           Unable to find the source device of the mountpoint {{ mountpoint }}.
           Please note that the 'mountpoint' has to be the strictly specified
           mountpoint of the device.
-      when: device_name == ""
-      failed_when: device_name == ""
+      when: device_fullname == ""
+      failed_when: device_fullname == ""
   roles:
     - setup
     - role: run

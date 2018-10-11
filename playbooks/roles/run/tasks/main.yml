@@ -16,6 +16,15 @@
   loop: "{{ core_workloads }}"
   run_once: yes
 
+- name: get the parent device info of device {{ device_fullname }}
+  command: "{{ role_path }}/files/devname2id.sh {{ device_fullname }}"
+  register: comm_res
+  changed_when: False
+
+- set_fact:
+    pdevice_fullname: "{{ comm_res.stdout_lines[0] }}"
+    pdevice_id: "{{ comm_res.stdout_lines[1] }}"
+
 - include_tasks: repeat_workload.yml
   vars:
     rocksdb_data_dir: "{{ mountpoint }}/{{ rocksdb_data_dirname }}"

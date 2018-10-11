@@ -47,18 +47,13 @@
       shell: sync; echo 3 > /proc/sys/vm/drop_caches
 
     - block:
-        - name: ({{ notes }}) get the parent device ID of device {{ device_name }}
-          command: "{{ role_path }}/files/devname2id.sh {{ device_name }}"
-          register: comm_res
-          changed_when: False
-
         - name: ({{ notes }}) disable all kernel tracing and clear the trace buffers
           become: yes
           # The `trace-cmd record` process will not start if we combine this and
           # the `trace-cmd record` command together.
           command: trace-cmd reset
 
-        - name: ({{ notes }}) start to trace the block events for device {{ comm_res.stdout_lines[0] }}
+        - name: ({{ notes }}) start to trace the block events for device {{ pdevice_fullname }}
           become: yes
           # A very good article: "trace-cmd: A front-end for Ftrace"
           #   https://lwn.net/Articles/410200/
@@ -69,9 +64,9 @@
             -o {{ remote_blkstat_log_file }}
             --date
             -e block:block_rq_issue
-            -f "dev == {{ comm_res.stdout_lines[1] }}"
+            -f "dev == {{ pdevice_id }}"
             -e block:block_rq_complete
-            -f "dev == {{ comm_res.stdout_lines[1] }}"
+            -f "dev == {{ pdevice_id }}"
             < /dev/null > {{ workdir }}/nohup.out 2>&1 &
             echo $! > {{ blkstat_pid_file }}
 
@@ -80,7 +75,7 @@
             seconds: 7
       when: cur_trace_block_rq
 
-    - name: ({{ notes }}) get the stats of device {{ device_name }} (before)
+    - name: ({{ notes }}) get the stats of device {{ pdevice_fullname }} (before)
       # We don't want to interfere the stats of the block device so just not to
       # write the result directly to file here.
       shell: "{{ device_stats_command }}"
@@ -97,7 +92,7 @@
       environment:
         PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
 
-    - name: ({{ notes }}) get the stats of device {{ device_name }} (after)
+    - name: ({{ notes }}) get the stats of device {{ pdevice_fullname }} (after)
       shell: "sync; {{ device_stats_command }}"
       register: after_stats_res
 

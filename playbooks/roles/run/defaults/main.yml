@@ -7,6 +7,7 @@ fieldcount: 1
 # (DO NOT CHANGE) Use the last x number of values to detect steady state.
 measurement_window_size: 5
 
+perf_stats_report_interval_sec: 3
 
 local_output_dir: "{{ inventory_dir }}/analysis/data/ycsb/{{ inventory_hostname }}/output_{{ cur_workload }}"
 remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"
