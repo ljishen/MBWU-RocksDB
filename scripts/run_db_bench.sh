@@ -302,6 +302,12 @@ function print_var() {
     echo "$1=$val" | tee -a "$DB_BENCH_LOG"
 }
 
+# Make room for logging the current benchmark if the "$DB_BENCH_LOG"
+# already exists.
+if [ -f "$DB_BENCH_LOG" ]; then
+    printf '\n\n\n' | tee -a "$DB_BENCH_LOG"
+fi
+
 daemon_report_interval_sec="${DAEMON_REPORT_INTERVAL_SEC:-3}"
 
 start_date="$(date +%F_%T)"
