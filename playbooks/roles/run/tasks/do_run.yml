@@ -41,18 +41,16 @@
       become: yes
       shell: pkill -SIGTERM --pidfile {{ blkstat_pid_file }} ; rm --force {{ blkstat_pid_file }}
 
+    - name: ({{ notes }}) disable all kernel tracing and clear the trace buffers
+      become: yes
+      command: trace-cmd reset
+
     - name: ({{ notes }}) free the slab objects and pagecache
       # See https://www.kernel.org/doc/Documentation/sysctl/vm.txt
       become: yes
       shell: sync; echo 3 > /proc/sys/vm/drop_caches
 
     - block:
-        - name: ({{ notes }}) disable all kernel tracing and clear the trace buffers
-          become: yes
-          # The `trace-cmd record` process will not start if we combine this and
-          # the `trace-cmd record` command together.
-          command: trace-cmd reset
-
         - name: ({{ notes }}) start to trace the block events for device {{ pdevice_fullname }}
           become: yes
           # A very good article: "trace-cmd: A front-end for Ftrace"
