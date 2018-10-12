@@ -358,11 +358,15 @@ trap cleanup_daemons EXIT
 
 cleanup_daemons
 
-nohup stdbuf -oL -eL iostat -dktxyzH -g "$device_fullname" "$daemon_report_interval_sec" < /dev/null > "$IOSTAT_LOG" 2>&1 &
+S_TIME_FORMAT=ISO nohup stdbuf -oL -eL \
+    iostat -dktxyzH -g "$device_fullname" "$daemon_report_interval_sec" \
+    < /dev/null > "$IOSTAT_LOG" 2>&1 &
 echo $! > "$IOSTAT_PIDFILE"
 newline_print "iostat daemon is running (PID=$(cat $IOSTAT_PIDFILE))"
 
-nohup stdbuf -oL -eL mpstat -P ALL "$daemon_report_interval_sec" < /dev/null > "$MPSTAT_LOG" 2>&1 &
+S_TIME_FORMAT=ISO nohup stdbuf -oL -eL \
+    mpstat -P ALL "$daemon_report_interval_sec" \
+    < /dev/null > "$MPSTAT_LOG" 2>&1 &
 echo $! > "$MPSTAT_PIDFILE"
 newline_print "mpstat daemon is running (PID=$(cat $MPSTAT_PIDFILE))"
 
