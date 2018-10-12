@@ -36,10 +36,27 @@ BLKSTAT_PIDFILE=blkstat.pid
 DISKSTATS_LOG_B="$OUTPUT_BASE"/diskstats_b.log     # log the before stats
 DISKSTATS_LOG_A="$OUTPUT_BASE"/diskstats_a.log     # log the after stats
 
-device_fullname="$(findmnt --noheadings --output SOURCE --mountpoint "$mountpoint")"
-device_info="$("$REPO_DIR"/playbooks/roles/run/files/devname2id.sh "$device_fullname")"
-pdevice_fullname="$(echo "$device_info" | head -1)"
-pdevice_id="$(echo "$device_info" | tail -1)"
+device_fullname="$(findmnt --noheadings --output SOURCE --mountpoint "$mountpoint" || true)"
+if [ -n "$device_fullname" ]; then
+    device_info="$("$REPO_DIR"/playbooks/roles/run/files/devname2id.sh "$device_fullname")"
+    pdevice_fullname="$(echo "$device_info" | head -1)"
+    pdevice_id="$(echo "$device_info" | tail -1)"
+
+    notice="$(cat <<-ENDOFNOTICE
+Please make sure that the current git repository:
+    $REPO_DIR
+does NOT reside in any partition of device $pdevice_fullname
+ENDOFNOTICE
+)"
+else
+    notice="$(cat <<-ENDOFNOTICE
+[Error] Unable to detect the source device of mountpoint '$mountpoint'.
+
+Please make sure '$mountpoint' is the strictly specified mountpoint of the
+target device. If not, change it with env MOUNTPOINT.
+ENDOFNOTICE
+)"
+fi
 
 if [ "$#" -lt 1 ]; then
     cat <<-ENDOFMESSAGE
@@ -95,11 +112,9 @@ DB_BENCH_OPTIONS:
 
 -------------------------------------------------------------------------------
 IMPORTANT NOTICE:
-    Please make sure that the current git repository:
-        $REPO_DIR
-    does NOT reside in any partition of device $pdevice_fullname
+$(sed 's/^/    /' <<< "$notice")
 
-REQUIRED ENVIRONMENT VARIABLE:
+REQUIRED ENVIRONMENT VARIABLES:
     ROCKSDB_DIR=${ROCKSDB_DIR:-undefined}
     MOUNTPOINT=${MOUNTPOINT:-$mountpoint}
 ENDOFMESSAGE
@@ -113,6 +128,11 @@ fi
 
 if [[ -z "${ROCKSDB_DIR+"check"}" ]]; then
     echo "please set ROCKSDB_DIR before running."
+    exit 1
+fi
+
+if [ -z "$device_fullname" ]; then
+    echo "$notice"
     exit 1
 fi
 

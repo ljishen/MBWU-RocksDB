@@ -21,7 +21,8 @@
   register: comm_res
   changed_when: False
 
-- set_fact:
+- name: save the parent device info of device {{ device_fullname }}
+  set_fact:
     pdevice_fullname: "{{ comm_res.stdout_lines[0] }}"
     pdevice_id: "{{ comm_res.stdout_lines[1] }}"
 
