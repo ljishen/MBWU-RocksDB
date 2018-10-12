@@ -140,6 +140,20 @@ program."
     exit 1
 fi
 
+declare -A daemon_commands=(
+    [iostat]="iostat -dktxyzH -g $device_fullname $daemon_report_interval_sec"
+    [mpstat]="mpstat -P ALL $daemon_report_interval_sec"
+    [pidstat]="pidstat -G db_bench -ult $daemon_report_interval_sec"
+)
+
+for daemon in "${!daemon_commands[@]}"; do
+    if ! command -v "$daemon" &> /dev/null; then
+        echo "program '$daemon' is not available in this bash environment."
+        echo "if you are on Ubuntu, you can run 'apt-get install sysstat'."
+        exit 1
+    fi
+done
+
 do_trace_blk_rq=false
 if [[ $* == *"--trace_blk_rq "* ]]; then
     do_trace_blk_rq=true
@@ -323,12 +337,6 @@ print_separator
 
 newline_print "configuring scaling governor to performance for online CPUs"
 "$REPO_DIR"/playbooks/roles/setup/files/config_cpu.sh performance | tee -a "$DB_BENCH_LOG"
-
-declare -A daemon_commands=(
-    [iostat]="iostat -dktxyzH -g $device_fullname $daemon_report_interval_sec"
-    [mpstat]="mpstat -P ALL $daemon_report_interval_sec"
-    [pidstat]="pidstat -G db_bench -ult $daemon_report_interval_sec"
-)
 
 function cleanup_daemons() {
     for daemon in "${!daemon_commands[@]}"; do
