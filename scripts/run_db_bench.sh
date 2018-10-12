@@ -25,12 +25,8 @@ REPO_DIR="$(realpath "$SCRIPT_DIR"/..)"
 OUTPUT_BASE="$REPO_DIR"/analysis/data/db_bench
 
 DB_BENCH_LOG="$OUTPUT_BASE"/db_bench.log
-IOSTAT_LOG="$OUTPUT_BASE"/iostat.log
-MPSTAT_LOG="$OUTPUT_BASE"/mpstat.log
 BLKSTAT_LOG="$OUTPUT_BASE"/blkstat.dat
 
-IOSTAT_PIDFILE=iostat.pid
-MPSTAT_PIDFILE=mpstat.pid
 BLKSTAT_PIDFILE=blkstat.pid
 
 DISKSTATS_LOG_B="$OUTPUT_BASE"/diskstats_b.log     # log the before stats
@@ -328,21 +324,30 @@ print_separator
 newline_print "configuring scaling governor to performance for online CPUs"
 "$REPO_DIR"/playbooks/roles/setup/files/config_cpu.sh performance | tee -a "$DB_BENCH_LOG"
 
+declare -A daemon_commands=(
+    [iostat]="iostat -dktxyzH -g $device_fullname $daemon_report_interval_sec"
+    [mpstat]="mpstat -P ALL $daemon_report_interval_sec"
+    [pidstat]="pidstat -G db_bench -ult $daemon_report_interval_sec"
+)
+
 function cleanup_daemons() {
-    if [ -f "$IOSTAT_PIDFILE" ]; then
-        newline_print "stopping iostat daemon"
+    for daemon in "${!daemon_commands[@]}"; do
+        daemon_pid="$daemon".pid
+        if [ -f "$daemon_pid" ]; then
+            newline_print "stopping $daemon daemon"
 
-        # The exit code is not 0 if the PID in pidfile is not found.
-        pkill -SIGTERM --pidfile "$IOSTAT_PIDFILE" || true
+            sig="SIGINT"
+            if [ "$daemon" = "iostat" ]; then
+                # iostat can only be stopped by SIGTERM
+                sig="SIGTERM"
+            fi
 
-        rm "$IOSTAT_PIDFILE"
-    fi
+            # The exit code is not 0 if the PID in pidfile is not found.
+            pkill --signal "$sig" --pidfile "$daemon_pid" || true
 
-    if [ -f "$MPSTAT_PIDFILE" ]; then
-        newline_print "stopping mpstat daemon"
-        pkill -SIGINT --pidfile "$MPSTAT_PIDFILE" || true
-        rm "$MPSTAT_PIDFILE"
-    fi
+            rm "$daemon_pid"
+        fi
+    done
 
     if [ -f "$BLKSTAT_PIDFILE" ]; then
         newline_print "stopping blkstat daemon"
@@ -358,17 +363,22 @@ trap cleanup_daemons EXIT
 
 cleanup_daemons
 
-S_TIME_FORMAT=ISO nohup stdbuf -oL -eL \
-    iostat -dktxyzH -g "$device_fullname" "$daemon_report_interval_sec" \
-    < /dev/null > "$IOSTAT_LOG" 2>&1 &
-echo $! > "$IOSTAT_PIDFILE"
-newline_print "iostat daemon is running (PID=$(cat $IOSTAT_PIDFILE))"
+function get_daemon_log() {
+    daemon="$1"
+    echo "$OUTPUT_BASE"/"$daemon".log
+}
 
-S_TIME_FORMAT=ISO nohup stdbuf -oL -eL \
-    mpstat -P ALL "$daemon_report_interval_sec" \
-    < /dev/null > "$MPSTAT_LOG" 2>&1 &
-echo $! > "$MPSTAT_PIDFILE"
-newline_print "mpstat daemon is running (PID=$(cat $MPSTAT_PIDFILE))"
+for daemon in "${!daemon_commands[@]}"; do
+    daemon_cmd="S_TIME_FORMAT=ISO nohup stdbuf -oL -eL \
+        ${daemon_commands[$daemon]} \
+        < /dev/null > $(get_daemon_log "$daemon") 2>&1 &"
+    newline_print "$daemon command: $daemon_cmd"
+
+    eval "$daemon_cmd"
+    daemon_pid="$daemon".pid
+    echo $! > "$daemon_pid"
+    newline_print "$daemon daemon is running (PID=$(cat "$daemon_pid"))"
+done
 
 newline_print "freeing the slab objects and pagecache"
 sync; echo 3 > /proc/sys/vm/drop_caches
@@ -376,7 +386,7 @@ sync; echo 3 > /proc/sys/vm/drop_caches
 if [ "$do_trace_blk_rq" = true ]; then
     trace-cmd reset
 
-    blk_trace_command="nohup trace-cmd record \
+    blk_trace_cmd="nohup trace-cmd record \
         -o $BLKSTAT_LOG \
         --date \
         -e block:block_rq_issue \
@@ -384,9 +394,9 @@ if [ "$do_trace_blk_rq" = true ]; then
         -e block:block_rq_complete \
         -f 'dev == $pdevice_id' \
         < /dev/null > nohup.out 2>&1 &"
-    newline_print "block events tracer command: $blk_trace_command"
+    newline_print "block events tracer command: $blk_trace_cmd"
 
-    eval "$blk_trace_command"
+    eval "$blk_trace_cmd"
     echo $! > "$BLKSTAT_PIDFILE"
     newline_print "starting to trace the block events for device $pdevice_fullname (PID=$(cat $BLKSTAT_PIDFILE))"
 
@@ -428,11 +438,13 @@ if [[ $* == *"--backup "* ]]; then
     newline_print "backuping files to dir $backup_dir"
     mkdir "$backup_dir"
     mv "$DB_BENCH_LOG" \
-        "$IOSTAT_LOG" \
-        "$MPSTAT_LOG" \
         "$DISKSTATS_LOG_B" \
         "$DISKSTATS_LOG_A" \
         "$backup_dir"
+
+    for daemon in "${!daemon_commands[@]}"; do
+        mv "$(get_daemon_log "$daemon")" "$backup_dir"
+    done
 
     if [ "$do_trace_blk_rq" = true ]; then
         mv "$BLKSTAT_LOG" "$IOSZDIST_LOG" "$backup_dir"
