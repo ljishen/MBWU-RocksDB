@@ -140,6 +140,8 @@ program."
     exit 1
 fi
 
+daemon_report_interval_sec="${DAEMON_REPORT_INTERVAL_SEC:-3}"
+
 declare -A daemon_commands=(
     [iostat]="iostat -dktxyzH -g $device_fullname $daemon_report_interval_sec"
     [mpstat]="mpstat -P ALL $daemon_report_interval_sec"
@@ -317,8 +319,6 @@ function print_var() {
 if [ -f "$DB_BENCH_LOG" ]; then
     printf '\n\n\n' | tee -a "$DB_BENCH_LOG"
 fi
-
-daemon_report_interval_sec="${DAEMON_REPORT_INTERVAL_SEC:-3}"
 
 start_date="$(date +%F_%T)"
 newline_print "start benchmark $run_benchmark at $start_date"
