@@ -305,7 +305,7 @@ function print_var() {
 daemon_report_interval_sec="${DAEMON_REPORT_INTERVAL_SEC:-3}"
 
 start_date="$(date +%F_%T)"
-newline_print "start benchmark $run_benchmark at $start_date" | tee "$DB_BENCH_LOG"
+newline_print "start benchmark $run_benchmark at $start_date"
 vars_to_print+=(
     data_dir
     device_fullname
@@ -319,6 +319,8 @@ for v in "${vars_to_print[@]}"; do
 done
 print_separator
 
+newline_print "configuring scaling governor to performance for online CPUs"
+"$REPO_DIR"/playbooks/roles/setup/files/config_cpu.sh performance | tee -a "$DB_BENCH_LOG"
 
 function cleanup_daemons() {
     if [ -f "$IOSTAT_PIDFILE" ]; then
@@ -372,7 +374,7 @@ if [ "$do_trace_blk_rq" = true ]; then
         -e block:block_rq_complete \
         -f 'dev == $pdevice_id' \
         < /dev/null > nohup.out 2>&1 &"
-    newline_print "block events tracer command: $blk_trace_command" | tee -a "$DB_BENCH_LOG"
+    newline_print "block events tracer command: $blk_trace_command"
 
     eval "$blk_trace_command"
     echo $! > "$BLKSTAT_PIDFILE"
