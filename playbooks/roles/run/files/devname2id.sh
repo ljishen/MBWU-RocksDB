@@ -4,14 +4,14 @@ set -eu -o pipefail
 
 if [ "$#" -ne 1 ]; then
     cat <<-ENDOFMESSAGE
-Usage: $0 DEVICE_NAME
+Usage: $0 DEVICE_FULLNAME
 
 This script converts the device name of a partition to the device ID of its
 parent held by the type dev_t, which can be then used to filter the device in
 the block:* events in ftrace.
 
-DEVICE_NAME:
-    Note that this is the device name of a partition.
+DEVICE_FULLNAME:
+    Note that this is the device full name of a partition.
 
 For example:
     $0 /dev/sda1
@@ -22,13 +22,14 @@ ENDOFMESSAGE
     exit
 fi
 
-device_name="$1"
+device_fullname="$1"
 
-pdevice_name=/dev/"$(lsblk --noheadings --output pkname "$device_name" | tail -1)"
-major="$(stat --format '%t' "$pdevice_name")"
-minor="$(stat --format '%T' "$pdevice_name")"
+pdevice_name="$(lsblk --noheadings --output pkname "$device_fullname" | tail -1)"
+majmin="$(cat /sys/class/block/"$pdevice_name"/dev)"
+major="${majmin%:*}"
+minor="${majmin#*:}"
 
-echo "$pdevice_name"
+echo /dev/"$pdevice_name"
 
 # See how to convert the major and minor numbers to the device ID:
 #   https://github.com/brendangregg/perf-tools/blob/master/iolatency
