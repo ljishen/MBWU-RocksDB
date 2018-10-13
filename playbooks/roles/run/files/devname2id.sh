@@ -11,7 +11,7 @@ parent held by the type dev_t, which can be then used to filter the device in
 the block:* events in ftrace.
 
 DEVICE_FULLNAME:
-    Note that this is the device full name of a partition.
+    Note that this is the full name of a device partition.
 
 For example:
     $0 /dev/sda1

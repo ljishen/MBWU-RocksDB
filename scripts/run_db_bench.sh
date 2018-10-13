@@ -349,7 +349,12 @@ done
 print_separator
 
 newline_print "configuring scaling governor to performance for online CPUs"
-"$REPO_DIR"/playbooks/roles/setup/files/config_cpu.sh performance | tee -a "$DB_BENCH_LOG"
+"$REPO_DIR"/playbooks/roles/setup/files/config_cpu.sh performance \
+    | tee -a "$DB_BENCH_LOG"
+
+nofile_soft_limit=63536
+newline_print "set the nofile soft limit to $nofile_soft_limit"
+ulimit -Sn "$nofile_soft_limit"
 
 function cleanup_daemons() {
     for daemon in "${!daemon_commands[@]}"; do
@@ -431,7 +436,7 @@ newline_print "saving stats for disk $pdevice_fullname (before)"
 grep "$pdevice_name" /proc/diskstats > "$DISKSTATS_LOG_B"
 
 echo | tee -a "$DB_BENCH_LOG"
-eval "$db_bench_command"
+eval "time $db_bench_command"
 
 newline_print "saving stats for disk $pdevice_fullname (after)"
 sync; grep "$pdevice_name" /proc/diskstats > "$DISKSTATS_LOG_A"
