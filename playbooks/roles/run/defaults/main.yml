@@ -44,3 +44,7 @@ remote_iostat_log_file: "{{ remote_output_dir }}/{{ iostat_log_filename }}"
 blkstat_pid_file: "{{ workdir }}/blkstat.pid"
 blkstat_log_filename: "blkstat_round{{ cur_round }}.dat"
 remote_blkstat_log_file: "{{ remote_output_dir }}/{{ blkstat_log_filename }}"
+
+ioszdist_log_filename: "ioszdist.log"
+local_ioszdist_log_file: "{{ local_output_dir }}/{{ ioszdist_log_filename }}"
+remote_ioszdist_log_file: "{{ remote_output_dir }}/{{ ioszdist_log_filename }}"

@@ -457,7 +457,7 @@ if [ "$do_trace_blk_rq" = true ]; then
 
     IOSZDIST_LOG="$OUTPUT_BASE"/ioszdist.log
     newline_print "generating I/O size distribution to $IOSZDIST_LOG"
-    "$SCRIPT_DIR"/ioszdist.sh "$BLKSTAT_LOG" | tee "$IOSZDIST_LOG"
+    "$REPO_DIR"/playbooks/roles/run/files/ioszdist.sh "$BLKSTAT_LOG" | tee "$IOSZDIST_LOG"
     rm "$OUTPUT_BASE"/events.dat "$OUTPUT_BASE"/sectors.dat
 fi
 

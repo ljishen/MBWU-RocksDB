@@ -140,6 +140,16 @@
           vars:
             local_file: "{{ local_output_dir }}/{{ archive_res.dest | basename }}"
             remote_file: "{{ archive_res.dest }}"
+
+        - name: ({{ notes }}) generate I/O size distribution
+          shell: >
+            {{ role_path }}/files/ioszdist.sh {{ remote_blkstat_log_file }}
+            > {{ remote_ioszdist_log_file }} 2>&1
+
+        - include_tasks: backup_file.yml
+          vars:
+            local_file: "{{ local_ioszdist_log_file }}"
+            remote_file: "{{ remote_ioszdist_log_file }}"
       when: cur_trace_block_rq
 
     - set_fact:
