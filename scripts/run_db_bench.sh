@@ -209,7 +209,7 @@ num_threads="${NUM_THREADS:-1}"
 
 # The percentage of all keys in the db to be used in the
 # operation (read/write/merge)
-operation_keys_ratio="${OPERATION_KEYS_RATIO:-75}"
+operation_keys_ratio="${OPERATION_KEYS_RATIO:-100}"
 
 vars_to_print=()
 

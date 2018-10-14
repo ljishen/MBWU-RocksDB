@@ -23,7 +23,7 @@ input_file_dir="$( cd "$( dirname "$input_file" )" >/dev/null && pwd )"
 events_file="$input_file_dir"/events.dat
 sectors_file="$input_file_dir"/sectors.dat
 
-event="block_rq_issue"
+event="block_rq_complete"
 
 echo "Generating events file $events_file"
 trace-cmd report -t -i "$input_file" -F "$event" > "$events_file"
