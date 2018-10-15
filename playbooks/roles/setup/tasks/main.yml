@@ -158,6 +158,7 @@
   changed_when: "cpu_config_res.rc == 0"
 
 - name: set the nofile soft limit to {{ nofile_soft_limit }}
+  become: yes
   pam_limits:
     domain: "{{ ansible_user }}"
     limit_item: nofile
