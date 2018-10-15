@@ -465,6 +465,10 @@ if [[ $* == *"--backup "* ]]; then
     backup_dir="$OUTPUT_BASE"/"$start_date"
     newline_print "backuping files to dir $backup_dir"
     mkdir "$backup_dir"
+
+    mv "$data_dir"/LOG "$backup_dir"
+    mv "$(find "$data_dir" -name "OPTIONS-*" -type f | sort | tail -1)" "$backup_dir"/OPTIONS
+
     mv "$DB_BENCH_LOG" \
         "$DISKSTATS_LOG_B" \
         "$DISKSTATS_LOG_A" \

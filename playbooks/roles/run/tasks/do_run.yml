@@ -17,7 +17,7 @@
             bin/ycsb load rocksdb -s
             -P {{ remote_workload_file }}
             -p rocksdb.dir={{ rocksdb_data_dir }}
-            -p options.file={{ remote_rocksdb_options_file }}
+            -p options.file={{ rocksdb_remote_input_options_file }}
             > {{ remote_load_output_file }} 2>&1
           args:
             chdir: "{{ ycsb_dir }}"
@@ -31,6 +31,12 @@
           vars:
             local_file: "{{ local_load_output_file }}"
             remote_file: "{{ remote_load_output_file }}"
+
+        - include_tasks: backup_file.yml
+          vars:
+            local_file: "{{ local_rocksdb_log_file }}"
+            remote_file: "{{ rocksdb_data_dir }}/LOG"
+            phase: load
       when: cur_load_data
 
     - set_fact:
@@ -98,6 +104,21 @@
       vars:
         local_file: "{{ local_transactions_output_file }}"
         remote_file: "{{ remote_transactions_output_file }}"
+
+    - include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_rocksdb_log_file }}"
+        remote_file: "{{ rocksdb_data_dir }}/LOG"
+        phase: transactions
+
+    - name: ({{ notes }}) get the latest RocksDB OPTIONS file
+      shell: find {{ rocksdb_data_dir }} -name "OPTIONS-*" -type f | sort | tail -1
+      register: comm_res
+
+    - include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_output_dir }}/OPTIONS"
+        remote_file: "{{ comm_res.stdout }}"
 
     - name: ({{ notes }}) save device stats to files
       copy:

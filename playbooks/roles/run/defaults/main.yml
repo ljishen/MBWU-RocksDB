@@ -9,14 +9,15 @@ measurement_window_size: 5
 
 perf_stats_report_interval_sec: 3
 
+rocksdb_remote_input_options_file: "{{ remote_output_dir }}/{{ rocksdb_options_file | basename }}"
+
+local_rocksdb_log_file: "{{ local_output_dir }}/LOG_{{ phase }}_round{{ cur_round }}"
+
 local_output_dir: "{{ inventory_dir }}/analysis/data/ycsb/{{ inventory_hostname }}/output_{{ cur_workload }}"
 remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"
 
 local_workload_file: "{{ local_output_dir }}/{{ cur_workload }}"
 remote_workload_file: "{{ remote_output_dir }}/{{ cur_workload }}"
-
-local_rocksdb_options_file: "{{ local_output_dir }}/{{ rocksdb_options_file | basename }}"
-remote_rocksdb_options_file: "{{ remote_output_dir }}/{{ rocksdb_options_file | basename }}"
 
 load_filename: "load_round{{ cur_round }}.dat"
 local_load_output_file: "{{ local_output_dir }}/{{ load_filename }}"

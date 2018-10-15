@@ -28,19 +28,13 @@
       failed_when: stat_res.stat.isreg is not defined or not stat_res.stat.isreg
   when: not load_data
 
-- block:
-    - name: ({{ notes }}) deploy the RocksDB options file
-      template:
-        backup: yes
-        dest: "{{ remote_rocksdb_options_file }}"
-        force: yes
-        owner: "{{ ansible_user }}"
-        src: "{{ rocksdb_options_file }}"
-
-    - include_tasks: backup_file.yml
-      vars:
-        local_file: "{{ local_rocksdb_options_file }}"
-        remote_file: "{{ remote_rocksdb_options_file }}"
+- name: ({{ notes }}) deploy the RocksDB options file
+  template:
+    backup: yes
+    dest: "{{ rocksdb_remote_input_options_file }}"
+    force: yes
+    owner: "{{ ansible_user }}"
+    src: "{{ rocksdb_options_file }}"
   when: load_data
 
 - name: ({{ notes }}) copy user-defined workload parameter file to {{ local_tmp_data_dir }}
