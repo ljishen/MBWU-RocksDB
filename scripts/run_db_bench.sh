@@ -354,6 +354,7 @@ newline_print "configuring scaling governor to performance for online CPUs"
 "$REPO_DIR"/playbooks/roles/setup/files/config_cpu.sh performance \
     | tee -a "$DB_BENCH_LOG"
 
+# https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/5/html/tuning_and_optimizing_red_hat_enterprise_linux_for_oracle_9i_and_10g_databases/chap-oracle_9i_and_10g_tuning_guide-setting_shell_limits_for_the_oracle_user
 nofile_soft_limit=63536
 newline_print "set the nofile soft limit to $nofile_soft_limit"
 ulimit -Sn "$nofile_soft_limit"
