@@ -149,7 +149,7 @@
     {{ maven_dir }}/bin/mvn -pl com.yahoo.ycsb:rocksdb-binding -am clean package
   args:
     chdir: "{{ ycsb_dir }}"
-  when: git_res.after != git_res.before or find_res.matched == 0
+  when: git_res.after != git_res.before or find_res.matched == 0 or force_rebuild_rocksdb_ycsb_binding
 
 - name: config scaling governor for online CPUs
   become: yes

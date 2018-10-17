@@ -3,12 +3,15 @@ ansible_user: ljishen
 ansible_ssh_private_key_file: /home/{{ ansible_user }}/keys/id_rsa
 
 maven_version: 3.5.4
-rocksdb_version: 5.14.3
+rocksdb_version: 5.15.10
 
 # This can be the the literal string HEAD, a branch name, a tag name
 # of repo https://github.com/ljishen/YCSB.
 # Only support revision >= 386d1914c62dfa65bb6ca9772383ad4113337baa
 ycsb_version: HEAD
+
+# Set this option to yes for the first run if you changed the rocksdb_version
+force_rebuild_rocksdb_ycsb_binding: no
 
 workdir: /tmp/ycsb-rocksdb
 rocksdb_data_dirname: ycsb-rocksdb-data
