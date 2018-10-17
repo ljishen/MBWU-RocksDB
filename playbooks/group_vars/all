@@ -10,9 +10,6 @@ rocksdb_version: 5.15.10
 # Only support revision >= 386d1914c62dfa65bb6ca9772383ad4113337baa
 ycsb_version: HEAD
 
-# Set this option to yes for the first run if you changed the rocksdb_version
-force_rebuild_rocksdb_ycsb_binding: no
-
 workdir: /tmp/ycsb-rocksdb
 rocksdb_data_dirname: ycsb-rocksdb-data
 
