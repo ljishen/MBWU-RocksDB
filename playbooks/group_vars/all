@@ -3,7 +3,7 @@ ansible_user: ljishen
 ansible_ssh_private_key_file: /home/{{ ansible_user }}/keys/id_rsa
 
 maven_version: 3.5.4
-rocksdb_version: 5.15.10
+rocksdb_version: 5.14.3
 
 # This can be the the literal string HEAD, a branch name, a tag name
 # of repo https://github.com/ljishen/YCSB.
@@ -51,7 +51,7 @@ key_sz_bytes: 16
 # The min_value_sz_bytes would be
 #   max_value_sz_bytes + 1 - len(str(fieldcount - 1))
 # The default value of fieldcount is 1
-max_value_sz_bytes: 8192
+max_value_sz_bytes: 4096
 
 
 ######################### Debug Properties  #########################
