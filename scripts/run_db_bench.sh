@@ -19,7 +19,7 @@ data_dir="$mountpoint"/rocksdb_data
 
 num_keys="${NUM_KEYS:-$(( 10 * M ))}"
 key_size="${KEY_SIZE:-16}"
-value_size="${VALUE_SIZE:-$(( 8 * K ))}"
+value_size="${VALUE_SIZE:-$(( 4 * K ))}"
 
 REPO_DIR="$(realpath "$SCRIPT_DIR"/..)"
 OUTPUT_BASE="$REPO_DIR"/analysis/data/db_bench
@@ -279,27 +279,36 @@ db_bench_command="( time \
     --stats_interval_seconds=60 \
     --histogram=1 \
     \
-    --enable_pipelined_write=false \
+    --enable_pipelined_write=true \
     --delayed_write_rate=$(( 16 * M )) \
     --wal_dir=$data_dir \
     --table_cache_numshardbits=6 \
-    --max_background_compactions=$num_vcpus \
-    --max_background_jobs=$num_vcpus \
     --dump_malloc_stats=true \
     --new_table_reader_for_compaction_inputs=false \
     --compression_type=snappy \
-    --max_write_buffer_number=6 \
+    --max_write_buffer_number=50 \
     --hard_pending_compaction_bytes_limit=$(( 256 * G )) \
     --fifo_compaction_allow_compaction=false \
     --fifo_compaction_max_table_files_size_mb=$(( 1 * K )) \
     --num_levels=7 \
-    --block_size=$(( 8 * K )) \
-    \
+    --block_size=$(( 16 * K )) \
+    --bytes_per_sync=$(( 1 * M )) \
+    --soft_pending_compaction_bytes_limit=$(( 64 * G )) \
+    --hard_pending_compaction_bytes_limit=$(( 256 * G )) \
+    --max_background_jobs=$num_vcpus \
+    --max_background_flushes=$num_vcpus \
+    --max_background_compactions=$num_vcpus \
+    --subcompactions=3 \
     --min_level_to_compress=2 \
-    --max_bytes_for_level_base=$(( 512 * M )) \
+    --max_bytes_for_level_base=$(( 1 * 2 * 512 * M )) \
     --level0_file_num_compaction_trigger=2 \
-    --write_buffer_size=$(( 128 * M )) \
-    --min_write_buffer_number_to_merge=2 \
+    --write_buffer_size=$(( 512 * M )) \
+    --min_write_buffer_number_to_merge=1 \
+    --max_compaction_bytes=$(( 25 * 64 * M )) \
+    --level0_slowdown_writes_trigger=30 \
+    --level0_stop_writes_trigger=54 \
+    --target_file_size_base=$(( 64 * M )) \
+    --bytes_per_sync=$(( 1 * M )) \
     \
     $db_bench_command \
     ${db_bench_extra_options[*]+"${db_bench_extra_options[*]}"} \
