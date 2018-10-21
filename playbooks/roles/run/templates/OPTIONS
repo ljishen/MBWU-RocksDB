@@ -40,7 +40,7 @@
   max_background_flushes={{ ansible_processor_vcpus }}
   db_log_dir=
   max_background_compactions={{ ansible_processor_vcpus }}
-  max_subcompactions=3
+  max_subcompactions=4
   max_background_jobs={{ ansible_processor_vcpus }}
   random_access_max_buffer_size=1048576
   delete_obsolete_files_period_micros=21600000000
@@ -79,13 +79,13 @@
   compaction_options_universal={allow_trivial_move=false;size_ratio=1;min_merge_width=2;max_size_amplification_percent=200;max_merge_width=4294967295;compression_size_percent=-1;stop_style=kCompactionStopStyleTotalSize;}
   table_factory=BlockBasedTable
   paranoid_file_checks=false
-  compression_per_level=kNoCompression:kNoCompression:kSnappyCompression:kSnappyCompression:kSnappyCompression:kSnappyCompression:kSnappyCompression
+  compression_per_level=kNoCompression:kNoCompression:kLZ4Compression:kLZ4Compression:kLZ4Compression:kLZ4Compression:kLZ4Compression
   inplace_update_support=false
   soft_pending_compaction_bytes_limit={{ 64 * 1024 * 1024 * 1024 }}
   max_successive_merges=0
-  max_write_buffer_number=50
+  max_write_buffer_number=24
   level_compaction_dynamic_level_bytes=false
-  max_bytes_for_level_base={{ 1 * 2 * 512 * 1024 * 1024 }}
+  max_bytes_for_level_base={{ 2 * 2 * 128 * 1024 * 1024 }}
   optimize_filters_for_hits=false
   force_consistency_checks=false
   disable_auto_compactions=false
@@ -94,12 +94,12 @@
   compaction_options_fifo={allow_compaction=false;max_table_files_size=1073741824;ttl=0;}
   max_bytes_for_level_multiplier=10.000000
   level0_file_num_compaction_trigger=2
-  level0_slowdown_writes_trigger=30
+  level0_slowdown_writes_trigger=20
   compaction_pri=kByCompensatedSize
   compaction_filter=nullptr
-  level0_stop_writes_trigger=54
-  write_buffer_size={{ 512 * 1024 * 1024 }}
-  min_write_buffer_number_to_merge=1
+  level0_stop_writes_trigger=36
+  write_buffer_size={{ 128 * 1024 * 1024 }}
+  min_write_buffer_number_to_merge=2
   num_levels=7
   target_file_size_multiplier=1
   arena_block_size=16777216
@@ -109,7 +109,7 @@
   memtable_prefix_bloom_size_ratio=0.000000
   max_sequential_skip_in_iterations=8
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
-  compression=kSnappyCompression
+  compression=kLZ4Compression
   max_write_buffer_number_to_maintain=0
   bottommost_compression=kDisableCompressionOption
   comparator=leveldb.BytewiseComparator
@@ -133,7 +133,7 @@
   index_block_restart_interval=1
   hash_index_allow_collision=true
   partition_filters=false
-  block_size={{ 16 * 1024  }}
+  block_size={{ 8 * 1024  }}
   block_size_deviation=10
   verify_compression=false
   filter_policy=nullptr
@@ -151,13 +151,13 @@
   compaction_options_universal={allow_trivial_move=false;size_ratio=1;min_merge_width=2;max_size_amplification_percent=200;max_merge_width=4294967295;compression_size_percent=-1;stop_style=kCompactionStopStyleTotalSize;}
   table_factory=BlockBasedTable
   paranoid_file_checks=false
-  compression_per_level=kNoCompression:kNoCompression:kSnappyCompression:kSnappyCompression:kSnappyCompression:kSnappyCompression:kSnappyCompression
+  compression_per_level=kNoCompression:kNoCompression:kLZ4Compression:kLZ4Compression:kLZ4Compression:kLZ4Compression:kLZ4Compression
   inplace_update_support=false
   soft_pending_compaction_bytes_limit={{ 64 * 1024 * 1024 * 1024 }}
   max_successive_merges=0
-  max_write_buffer_number=50
+  max_write_buffer_number=24
   level_compaction_dynamic_level_bytes=false
-  max_bytes_for_level_base={{ 1 * 2 * 512 * 1024 * 1024 }}
+  max_bytes_for_level_base={{ 2 * 2 * 128 * 1024 * 1024 }}
   optimize_filters_for_hits=false
   force_consistency_checks=false
   disable_auto_compactions=false
@@ -166,12 +166,12 @@
   compaction_options_fifo={allow_compaction=false;max_table_files_size=1073741824;ttl=0;}
   max_bytes_for_level_multiplier=10.000000
   level0_file_num_compaction_trigger=2
-  level0_slowdown_writes_trigger=30
+  level0_slowdown_writes_trigger=20
   compaction_pri=kByCompensatedSize
   compaction_filter=nullptr
-  level0_stop_writes_trigger=54
-  write_buffer_size={{ 512 * 1024 * 1024 }}
-  min_write_buffer_number_to_merge=1
+  level0_stop_writes_trigger=36
+  write_buffer_size={{ 128 * 1024 * 1024 }}
+  min_write_buffer_number_to_merge=2
   num_levels=7
   target_file_size_multiplier=1
   arena_block_size=16777216
@@ -181,7 +181,7 @@
   memtable_prefix_bloom_size_ratio=0.000000
   max_sequential_skip_in_iterations=8
   max_bytes_for_level_multiplier_additional=1:1:1:1:1:1:1
-  compression=kSnappyCompression
+  compression=kLZ4Compression
   max_write_buffer_number_to_maintain=0
   bottommost_compression=kDisableCompressionOption
   comparator=leveldb.BytewiseComparator
@@ -205,7 +205,7 @@
   index_block_restart_interval=1
   hash_index_allow_collision=true
   partition_filters=false
-  block_size={{ 16 * 1024 }}
+  block_size={{ 8 * 1024 }}
   block_size_deviation=10
   verify_compression=false
   filter_policy=nullptr
