@@ -211,21 +211,24 @@ num_threads="${NUM_THREADS:-1}"
 # operation (read/write/merge)
 operation_keys_ratio="${OPERATION_KEYS_RATIO:-100}"
 
-vars_to_print=()
+# When 0 it is deterministic.
+seed="${SEED:-$( date +%s )}"
+
+vars_to_print=(seed)
 
 if [ "$run_benchmark" = "fillseq" ]; then
     rm -rf "$data_dir" && mkdir --parents "$data_dir"
     num_threads=1
     db_bench_command="--use_existing_db=0 \
         --num=$num_keys \
-        --seed=$( date +%s )"
+        --seed=$seed"
 elif [ "$run_benchmark" = "readrandom" ]; then
     vars_to_print+=(operation_keys_ratio)
     db_bench_command="--use_existing_db=1 \
         --readonly=1 \
         --num=$num_keys \
         --reads=$(( num_keys * operation_keys_ratio / 100 / num_threads )) \
-        --seed=$( date +%s )"
+        --seed=$seed"
 elif [ "$run_benchmark" = "readrandommergerandom" ] || \
      [ "$run_benchmark" = "mergerandom" ]; then
     vars_to_print+=(operation_keys_ratio)
@@ -234,7 +237,7 @@ elif [ "$run_benchmark" = "readrandommergerandom" ] || \
         --merge_keys=$num_keys \
         --merge_operator='put' \
         --num=$(( num_keys * operation_keys_ratio / 100 / num_threads )) \
-        --seed=$( date +%s )"
+        --seed=$seed"
 
     if [ "$run_benchmark" = "readrandommergerandom" ]; then
         # e.g. 70 means 70% out of all read and merge operations are merges
