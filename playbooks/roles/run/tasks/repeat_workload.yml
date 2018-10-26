@@ -135,12 +135,14 @@
     loop_var: cur_round
 
 - name: ({{ notes }}) stop to collect system performance statistics
-  shell: pkill -SIGINT --pidfile {{ item }} ; rm --force {{ item }}
+  shell: >
+    pkill --signal {{ item.signal }} --pidfile {{ item.pid_file }} ;
+    rm --force {{ item.pid_file }}
   loop:
-    - "{{ cpustat_pid_file }}"
-    - "{{ memstat_pid_file }}"
-    - "{{ iostat_pid_file }}"
-    - "{{ pidstat_pid_file }}"
+    - { pid_file: "{{ cpustat_pid_file }}", signal: SIGINT }
+    - { pid_file: "{{ memstat_pid_file }}", signal: SIGTERM }
+    - { pid_file: "{{ iostat_pid_file }}", signal: SIGTERM }
+    - { pid_file: "{{ pidstat_pid_file }}", signal: SIGINT }
 
 - include_tasks: backup_file.yml
   vars:
