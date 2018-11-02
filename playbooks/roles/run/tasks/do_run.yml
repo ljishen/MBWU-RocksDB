@@ -47,10 +47,6 @@
       become: yes
       shell: pkill -SIGTERM --pidfile {{ blkstat_pid_file }} ; rm --force {{ blkstat_pid_file }}
 
-    - name: ({{ notes }}) disable all kernel tracing and clear the trace buffers
-      become: yes
-      command: trace-cmd reset
-
     - name: ({{ notes }}) free the slab objects and pagecache
       # See https://www.kernel.org/doc/Documentation/sysctl/vm.txt
       become: yes
@@ -171,8 +167,8 @@
 
         - include_tasks: backup_file.yml
           vars:
-            local_file: "{{ local_file }}"
-            remote_file: "{{ remote_file }}"
+            local_file: "{{ item.local_file }}"
+            remote_file: "{{ item.remote_file }}"
           loop:
             - { local_file: "{{ local_output_dir }}/{{ remote_blkstat_log_archive | basename }}",
                 remote_file: "{{ remote_blkstat_log_archive }}" }
