@@ -59,24 +59,21 @@
     - block:
         - name: ({{ notes }}) start to trace the block events for device {{ pdevice_fullname }}
           become: yes
-          # A very good article: "trace-cmd: A front-end for Ftrace"
-          #   https://lwn.net/Articles/410200/
-          # Some definitions of the block I/O events:
-          #   https://www.ibm.com/developerworks/community/blogs/58e72888-6340-46ac-b488-d31aa4058e9c/entry/exploring_the_linux_storage_path_tracing_block_i_o_kernel_events?lang=en_us
           shell: >
-            nohup trace-cmd record
-            -o {{ remote_blkstat_log_file }}
-            --date
-            -e block:block_rq_issue
-            -f "dev == {{ pdevice_id }}"
-            -e block:block_rq_complete
-            -f "dev == {{ pdevice_id }}"
+            nohup blktrace
+            --act-mask=complete
+            --act-mask=issue
+            --buffer-size=4096KiB
+            --dev={{ pdevice_fullname }}
+            --output={{ pdevice_name }}
+            --output-dir={{ remote_blkstat_log_dir }}
+            --relay={{ debugfs_mountpoint }}
             < /dev/null > {{ workdir }}/nohup.out 2>&1 &
             echo $! > {{ blkstat_pid_file }}
 
         - name: ({{ notes }}) pause to wait for the tracer to start
           pause:
-            seconds: 7
+            seconds: 3
       when: cur_trace_block_rq
 
     - name: ({{ notes }}) get the stats of device {{ pdevice_fullname }} (before)
@@ -147,30 +144,44 @@
 
         - name: ({{ notes }}) pause to wait for the block request tracer to finish
           pause:
-            seconds: 30
+            seconds: 10
 
-        - name: ({{ notes }}) archive the blkstat log file
+        - name: ({{ notes }}) archive the blkstat log dir
           archive:
-            format: gz
+            dest: "{{ remote_blkstat_log_archive }}"
+            format: "{{ blkstat_archive_format }}"
             owner: "{{ ansible_user }}"
-            path: "{{ remote_blkstat_log_file }}"
+            path: "{{ remote_blkstat_log_dir }}"
             remove: no
-          register: archive_res
 
-        - include_tasks: backup_file.yml
-          vars:
-            local_file: "{{ local_output_dir }}/{{ archive_res.dest | basename }}"
-            remote_file: "{{ archive_res.dest }}"
+        - name: ({{ notes }}) parse output of event streams of {{ pdevice_fullname }}
+          command: >
+            blkparse
+            --act-mask=issue
+            --input-directory={{ remote_blkstat_log_dir }}
+            --input={{ pdevice_name }}
+            --output={{ remote_blkstat_text_file }}
+            --dump-binary={{ remote_blkstat_bin_file }}
+            --per-program-stats
 
         - name: ({{ notes }}) generate I/O size distribution
           shell: >
-            {{ role_path }}/files/ioszdist.sh {{ remote_blkstat_log_file }}
+            {{ role_path }}/files/ioszdist.sh {{ remote_blkstat_text_file }}
             > {{ remote_ioszdist_log_file }} 2>&1
 
         - include_tasks: backup_file.yml
           vars:
-            local_file: "{{ local_ioszdist_log_file }}"
-            remote_file: "{{ remote_ioszdist_log_file }}"
+            local_file: "{{ local_file }}"
+            remote_file: "{{ remote_file }}"
+          loop:
+            - { local_file: "{{ local_output_dir }}/{{ remote_blkstat_log_archive | basename }}",
+                remote_file: "{{ remote_blkstat_log_archive }}" }
+            - { local_file: "{{ local_output_dir }}/{{ blkstat_text_filename }}",
+                remote_file: "{{ remote_blkstat_text_file }}" }
+            - { local_file: "{{ local_output_dir }}/{{ blkstat_bin_filename }}",
+                remote_file: "{{ remote_blkstat_bin_file }}" }
+            - { local_file: "{{ local_output_dir }}/{{ ioszdist_log_filename }}",
+                remote_file: "{{ remote_ioszdist_log_file }}" }
       when: cur_trace_block_rq
 
     - set_fact:

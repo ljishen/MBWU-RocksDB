@@ -16,15 +16,16 @@
   loop: "{{ core_workloads }}"
   run_once: yes
 
-- name: get the parent device info of device {{ device_fullname }}
-  command: "{{ role_path }}/files/devname2id.sh {{ device_fullname }}"
+- name: get the parent device name of device {{ device_fullname }}
+  shell: >
+    lsblk --noheadings --output pkname {{ device_fullname }} | tail -1
   register: comm_res
   changed_when: False
 
-- name: save the parent device info of device {{ device_fullname }}
+- name: save the parent device fullname of device {{ device_fullname }}
   set_fact:
-    pdevice_fullname: "{{ comm_res.stdout_lines[0] }}"
-    pdevice_id: "{{ comm_res.stdout_lines[1] }}"
+    pdevice_fullname: "/dev/{{ comm_res.stdout }}"
+    pdevice_name: "{{ comm_res.stdout }}"
 
 - include_tasks: repeat_workload.yml
   vars:

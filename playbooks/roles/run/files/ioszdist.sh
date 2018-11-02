@@ -4,10 +4,12 @@ set -eu -o pipefail
 
 if [ "$#" -ne 1 ]; then
     cat <<-ENDOFMESSAGE
-Usage: $0 TRACE_FILE
+This script generates a summary of the distribution of the I/O size.
 
-TRACE_FILE:
-    The trace file is the output from 'trace-cmd record' command.
+Usage: $0 BLKPARSE_TXT_FILE
+
+BLKPARSE_TXT_FILE:
+    The file is the output (specified by option '--output') from BLKPARSE(1) command.
 
 
 Note that the "sectors" in result are the standard UNIX 512-byte sectors,
@@ -18,18 +20,12 @@ ENDOFMESSAGE
     exit
 fi
 
-input_file="$1"
-input_file_dir="$( cd "$( dirname "$input_file" )" >/dev/null && pwd )"
-events_file="$input_file_dir"/events.dat
-sectors_file="$input_file_dir"/sectors.dat
+blkparse_txt_file="$1"
+blkparse_txt_file_dir="$( cd "$( dirname "$blkparse_txt_file" )" >/dev/null && pwd )"
+sectors_file="$blkparse_txt_file_dir"/sectors.dat
 
-event="block_rq_complete"
-
-echo "Generating events file $events_file"
-trace-cmd report -t -i "$input_file" -F "$event" > "$events_file"
-
-echo "Extracting sectors from events file to $sectors_file"
-sed -nr 's/^.+,[[:digit:]]+ ([[:upper:]]+).+\+ ([[:digit:]]+).+$/\1 \2/ p' "$events_file" > "$sectors_file"
+echo "Extracting RWBS and sectors to $sectors_file"
+sed -nr 's/^.+ +([[:upper:]]+).+\+ +([[:digit:]]+).+$/\1 \2/ p' "$blkparse_txt_file" > "$sectors_file"
 
 echo "Parsing results..."
 

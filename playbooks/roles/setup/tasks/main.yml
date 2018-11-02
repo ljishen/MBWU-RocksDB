@@ -56,7 +56,7 @@
       - liblz4-dev
       - libzstd-dev
       - python3-numpy
-      - trace-cmd
+      - blktrace
     state: present
     update_cache: yes
 
@@ -164,4 +164,20 @@
     limit_item: nofile
     limit_type: soft
     value: "{{ nofile_soft_limit }}"
+
+- block:
+    - name: check the mountpoint of debugfs
+      command: findmnt --noheadings --output TARGET --source debugfs
+      register: comm_res
+      changed_when: False
+      ignore_errors: yes
+    - name: mount the debugfs if necessary
+      become: yes
+      command: mount -t debugfs none /sys/kernel/debug
+      changed_when: comm_res.rc != 0
+      when: comm_res.rc != 0
+    - name: save the mountpoint of debugfs
+      set_fact:
+        debugfs_mountpoint: "{{ comm_res.stdout if comm_res.rc == 0 else /sys/kernel/debug }}"
+  when: trace_block_rq
 ...
