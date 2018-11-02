@@ -24,18 +24,6 @@ ycsb_run_workloads: "{{ playbook_dir }}/roles/run/templates/myworkloada"
 # state, this number can be set to a higher number, e.g. 100.
 maximum_rounds: 25
 
-# Whether to trace the block requests to get information such as I/O size
-# distribution.
-# Setting this option to 'no' will disable tracing the block requests without
-# regarding the value of option 'trace_block_rq_once'.
-# Note that the block request tracer may bring overhead to the performance
-# of YCSB throughput.
-trace_block_rq: no
-
-# Trace the block requests only in the first round (yes), or in every
-# round (no).
-trace_block_rq_once: yes
-
 
 ######################### RocksDB Properties #########################
 
@@ -61,9 +49,24 @@ max_value_sz_bytes: 4096
 # every round (no).
 # This option should be 'yes' for most workloads. For debug purpose, you can
 # try to set to no.
-load_data_once: yes
+load_data_once: no
 
 # Whether to run the YCSB loading phase. If set to 'no', the loading phase will
 # be toally skipped without regarding the value of option 'load_data_once'.
 load_data: yes
+
+# Whether to trace the block requests during the load phase
+trace_load_block_rq: yes
+
+# Whether to trace the block requests during the transactions phase to get
+# information such as I/O size distribution.
+# Setting this option to 'no' will disable tracing the block requests without
+# regarding the value of option 'trace_transactions_block_rq_once'.
+# Note that the block request tracer may bring overhead to the performance
+# of YCSB throughput.
+trace_transactions_block_rq: yes
+
+# Trace the block requests only in the first round (yes), or in every
+# round (no).
+trace_transactions_block_rq_once: no
 ...

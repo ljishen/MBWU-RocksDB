@@ -1,0 +1,61 @@
+---
+- name: ({{ notes }}) stop to trace block requests
+  become: yes
+  shell: pkill -SIGINT --pidfile {{ blkstat_pid_file }} ; rm --force {{ blkstat_pid_file }}
+
+- name: ({{ notes }}) pause to wait for the block request tracer to finish
+  pause:
+    seconds: 10
+
+- name: ({{ notes }}) archive the blkstat log dir
+  archive:
+    dest: "{{ remote_blkstat_log_archive }}"
+    format: "{{ blkstat_archive_format }}"
+    owner: "{{ ansible_user }}"
+    path: "{{ remote_blkstat_log_dir }}"
+    remove: no
+
+- name: ({{ notes }}) parse output of event streams of {{ pdevice_fullname }}
+  command: >
+    blkparse
+    --act-mask={{ event }}
+    --input-directory={{ remote_blkstat_log_dir }}
+    --input={{ pdevice_name }}
+    --output={{ remote_blkstat_text_file }}
+    --dump-binary={{ remote_blkstat_bin_file }}
+    --per-program-stats
+  vars:
+    event: "{{ item }}"
+  loop: [ 'issue', 'complete' ]
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_output_dir }}/{{ blkstat_text_filename }}"
+    remote_file: "{{ remote_blkstat_text_file }}"
+    event: "{{ item }}"
+  loop: [ 'issue', 'complete' ]
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_output_dir }}/{{ blkstat_bin_filename }}"
+    remote_file: "{{ remote_blkstat_bin_file }}"
+    event: "{{ item }}"
+  loop: [ 'issue', 'complete' ]
+
+- name: ({{ notes }}) generate I/O size distribution
+  shell: >
+    {{ role_path }}/files/ioszdist.sh {{ remote_blkstat_text_file }}
+    > {{ remote_ioszdist_log_file }} 2>&1
+  vars:
+    event: complete
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ item.local_file }}"
+    remote_file: "{{ item.remote_file }}"
+  loop:
+    - { local_file: "{{ local_output_dir }}/{{ remote_blkstat_log_archive | basename }}",
+        remote_file: "{{ remote_blkstat_log_archive }}" }
+    - { local_file: "{{ local_output_dir }}/{{ ioszdist_log_filename }}",
+        remote_file: "{{ remote_ioszdist_log_file }}" }
+...

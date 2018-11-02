@@ -113,7 +113,7 @@
 
 - set_fact:
     cur_load_data: "{{ load_data }}"
-    cur_trace_block_rq: "{{ trace_block_rq }}"
+    cur_trace_transactions_block_rq: "{{ trace_transactions_block_rq }}"
     outer_notes_repeat: "{{ notes }}"
     tracking_values: []
     steady_state: False

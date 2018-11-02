@@ -1,6 +1,10 @@
 ---
 - block:
 
+    - name: ({{ notes }}) kill the remnant processes for tracing block requests
+      become: yes
+      shell: pkill -SIGTERM --pidfile {{ blkstat_pid_file }} ; rm --force {{ blkstat_pid_file }}
+
     - block:
         - name: ({{ notes }}) ensure the presence of RocksDB data dir {{ rocksdb_data_dir }}
           become: yes
@@ -11,6 +15,11 @@
           loop:
             - absent
             - directory
+
+        - include_tasks: free_cache.yml
+
+        - include_tasks: start_blkstat.yml
+          when: trace_load_block_rq
 
         - name: ({{ notes }}) load the data
           shell: >
@@ -24,6 +33,9 @@
           environment:
             PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
 
+        - include_tasks: stop_blkstat.yml
+          when: trace_load_block_rq
+
         - name: ({{ notes }}) print the size of database dir after loaded
           command: du -BK {{ rocksdb_data_dir }}
 
@@ -36,41 +48,20 @@
           vars:
             local_file: "{{ local_rocksdb_log_file }}"
             remote_file: "{{ rocksdb_data_dir }}/LOG"
-            phase: load
+      vars:
+        phase: load
       when: cur_load_data
 
     - set_fact:
         cur_load_data: False
       when: load_data_once
 
-    - name: ({{ notes }}) kill the remnant processes for tracing block requests
-      become: yes
-      shell: pkill -SIGTERM --pidfile {{ blkstat_pid_file }} ; rm --force {{ blkstat_pid_file }}
+    - include_tasks: free_cache.yml
 
-    - name: ({{ notes }}) free the slab objects and pagecache
-      # See https://www.kernel.org/doc/Documentation/sysctl/vm.txt
-      become: yes
-      shell: sync; echo 3 > /proc/sys/vm/drop_caches
-
-    - block:
-        - name: ({{ notes }}) start to trace the block events for device {{ pdevice_fullname }}
-          become: yes
-          shell: >
-            nohup blktrace
-            --act-mask=complete
-            --act-mask=issue
-            --buffer-size=4096KiB
-            --dev={{ pdevice_fullname }}
-            --output={{ pdevice_name }}
-            --output-dir={{ remote_blkstat_log_dir }}
-            --relay={{ debugfs_mountpoint }}
-            < /dev/null > {{ workdir }}/nohup.out 2>&1 &
-            echo $! > {{ blkstat_pid_file }}
-
-        - name: ({{ notes }}) pause to wait for the tracer to start
-          pause:
-            seconds: 3
-      when: cur_trace_block_rq
+    - include_tasks: start_blkstat.yml
+      vars:
+        phase: transactions
+      when: cur_trace_transactions_block_rq
 
     - name: ({{ notes }}) get the stats of device {{ pdevice_fullname }} (before)
       # We don't want to interfere the stats of the block device so just not to
@@ -93,25 +84,14 @@
       shell: "sync; {{ device_stats_command }}"
       register: after_stats_res
 
-    - include_tasks: backup_file.yml
+    - include_tasks: stop_blkstat.yml
       vars:
-        local_file: "{{ local_transactions_output_file }}"
-        remote_file: "{{ remote_transactions_output_file }}"
-
-    - include_tasks: backup_file.yml
-      vars:
-        local_file: "{{ local_rocksdb_log_file }}"
-        remote_file: "{{ rocksdb_data_dir }}/LOG"
         phase: transactions
+      when: cur_trace_transactions_block_rq
 
-    - name: ({{ notes }}) get the latest RocksDB OPTIONS file
-      shell: find {{ rocksdb_data_dir }} -name "OPTIONS-*" -type f | sort | tail -1
-      register: comm_res
-
-    - include_tasks: backup_file.yml
-      vars:
-        local_file: "{{ local_output_dir }}/OPTIONS"
-        remote_file: "{{ comm_res.stdout }}"
+    - set_fact:
+        cur_trace_transactions_block_rq: False
+      when: trace_transactions_block_rq_once
 
     - name: ({{ notes }}) save device stats to files
       copy:
@@ -133,71 +113,25 @@
         remote_file: "{{ remote_device_stats_file }}"
       loop: [ 'b', 'a' ]
 
-    - block:
-        - name: ({{ notes }}) stop to trace block requests
-          become: yes
-          shell: pkill -SIGINT --pidfile {{ blkstat_pid_file }} ; rm --force {{ blkstat_pid_file }}
+    - include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_transactions_output_file }}"
+        remote_file: "{{ remote_transactions_output_file }}"
 
-        - name: ({{ notes }}) pause to wait for the block request tracer to finish
-          pause:
-            seconds: 10
+    - include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_rocksdb_log_file }}"
+        remote_file: "{{ rocksdb_data_dir }}/LOG"
+        phase: transactions
 
-        - name: ({{ notes }}) archive the blkstat log dir
-          archive:
-            dest: "{{ remote_blkstat_log_archive }}"
-            format: "{{ blkstat_archive_format }}"
-            owner: "{{ ansible_user }}"
-            path: "{{ remote_blkstat_log_dir }}"
-            remove: no
+    - name: ({{ notes }}) get the latest RocksDB OPTIONS file
+      shell: find {{ rocksdb_data_dir }} -name "OPTIONS-*" -type f | sort | tail -1
+      register: comm_res
 
-        - name: ({{ notes }}) parse output of event streams of {{ pdevice_fullname }}
-          command: >
-            blkparse
-            --act-mask={{ event }}
-            --input-directory={{ remote_blkstat_log_dir }}
-            --input={{ pdevice_name }}
-            --output={{ remote_blkstat_text_file }}
-            --dump-binary={{ remote_blkstat_bin_file }}
-            --per-program-stats
-          vars:
-            event: "{{ item }}"
-          loop: [ 'issue', 'complete' ]
-
-        - include_tasks: backup_file.yml
-          vars:
-            local_file: "{{ local_output_dir }}/{{ blkstat_text_filename }}"
-            remote_file: "{{ remote_blkstat_text_file }}"
-            event: "{{ item }}"
-          loop: [ 'issue', 'complete' ]
-
-        - include_tasks: backup_file.yml
-          vars:
-            local_file: "{{ local_output_dir }}/{{ blkstat_bin_filename }}"
-            remote_file: "{{ remote_blkstat_bin_file }}"
-            event: "{{ item }}"
-          loop: [ 'issue', 'complete' ]
-
-        - name: ({{ notes }}) generate I/O size distribution
-          shell: >
-            {{ role_path }}/files/ioszdist.sh {{ remote_blkstat_text_file }}
-            > {{ remote_ioszdist_log_file }} 2>&1
-          vars:
-            event: complete
-
-        - include_tasks: backup_file.yml
-          vars:
-            local_file: "{{ item.local_file }}"
-            remote_file: "{{ item.remote_file }}"
-          loop:
-            - { local_file: "{{ local_output_dir }}/{{ remote_blkstat_log_archive | basename }}",
-                remote_file: "{{ remote_blkstat_log_archive }}" }
-            - { local_file: "{{ local_output_dir }}/{{ ioszdist_log_filename }}",
-                remote_file: "{{ remote_ioszdist_log_file }}" }
-      when: cur_trace_block_rq
-
-    - set_fact:
-        cur_trace_block_rq: False
-      when: trace_block_rq_once
+    - include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_output_dir }}/OPTIONS"
+        remote_file: "{{ comm_res.stdout }}"
 
     - name: ({{ notes }}) extract the throughput value from output
       command: >

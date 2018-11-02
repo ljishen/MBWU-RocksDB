@@ -179,5 +179,5 @@
     - name: save the mountpoint of debugfs
       set_fact:
         debugfs_mountpoint: "{{ comm_res.stdout if comm_res.rc == 0 else '/sys/kernel/debug' }}"
-  when: trace_block_rq
+  when: trace_transactions_block_rq or trace_load_block_rq
 ...

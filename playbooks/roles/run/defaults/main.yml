@@ -48,15 +48,15 @@ local_pidstat_log_file: "{{ local_output_dir }}/{{ pidstat_log_filename }}"
 remote_pidstat_log_file: "{{ remote_output_dir }}/{{ pidstat_log_filename }}"
 
 blkstat_pid_file: "{{ workdir }}/blkstat.pid"
-blkstat_log_dirname: "blkstat_round{{ cur_round }}"
+blkstat_log_dirname: "blkstat_{{ phase }}_round{{ cur_round }}"
 remote_blkstat_log_dir: "{{ remote_output_dir }}/{{ blkstat_log_dirname }}"
 # See parameter format in module archive for all the available formats
 #   https://docs.ansible.com/ansible/latest/modules/archive_module.html
 blkstat_archive_format: gz
 remote_blkstat_log_archive: "{{ remote_blkstat_log_dir }}.{{ blkstat_archive_format }}"
-blkstat_text_filename: "blkstat_round{{ cur_round }}_{{ event }}.log"
+blkstat_text_filename: "blkstat_{{ phase }}_round{{ cur_round }}_{{ event }}.log"
 remote_blkstat_text_file: "{{ remote_output_dir }}/{{ blkstat_text_filename }}"
-blkstat_bin_filename: "blkstat_round{{ cur_round }}_{{ event }}.bin"
+blkstat_bin_filename: "blkstat_{{ phase }}_round{{ cur_round }}_{{ event }}.bin"
 remote_blkstat_bin_file: "{{ remote_output_dir }}/{{ blkstat_bin_filename }}"
 
 ioszdist_log_filename: "ioszdist_round{{ cur_round }}.log"
