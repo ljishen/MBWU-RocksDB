@@ -5,7 +5,24 @@
     core_workloads: [ 'workloada', 'workloadb', 'workloadc', 'workloadd', 'workloade', 'workloadf' ]
     ycsb_dir: "{{ workdir }}/YCSB"
     maven_dir: "{{ workdir }}/apache-maven-{{ maven_version }}"
+    device_fullname: /dev/{{ device_name }}
   pre_tasks:
+    - name: retrieve the stat of block device {{ device_fullname }}
+      stat:
+        follow: no
+        get_attributes: no
+        get_checksum: no
+        get_md5: no
+        get_mime: no
+        path: "{{ device_fullname }}"
+      register: stat_res
+    - name: verify the existence of block device {{ device_fullname }}
+      debug:
+        msg: >
+          Please double check the existence of block device {{ device_fullname }}
+      when: stat_res.stat.isblk is not defined or not stat_res.stat.isblk
+      failed_when: stat_res.stat.isblk is not defined or not stat_res.stat.isblk
+
     - name: collect the run workloads
       set_fact:
         run_workloads: "{{ ycsb_run_workloads.split(',') }}"
@@ -25,22 +42,6 @@
       failed_when: item.stat is defined and not item.stat.exists
       loop: "{{ stat_res.results }}"
 
-    - name: get the source device of mountpoint {{ mountpoint }}
-      command: >
-        findmnt --noheadings --output SOURCE --mountpoint {{ mountpoint }}
-      register: comm_res
-      changed_when: False
-      ignore_errors: yes
-    - name: save the source device name
-      set_fact:
-        device_fullname: "{{ comm_res.stdout }}"
-    - debug:
-        msg: >
-          Unable to find the source device of the mountpoint {{ mountpoint }}.
-          Please note that the 'mountpoint' has to be the strictly specified
-          mountpoint of the device.
-      when: device_fullname == ""
-      failed_when: device_fullname == ""
   roles:
     - setup
     - role: run

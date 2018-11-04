@@ -13,6 +13,11 @@ ycsb_version: HEAD
 workdir: /tmp/ycsb-rocksdb
 rocksdb_data_dirname: ycsb-rocksdb-data
 
+# Path of the fio program. By default it uses the version of whatever the system
+# package management provided.
+# You can provide a path to your fio build.
+fio_bin: fio
+
 # This variable accepts the name of YCSB core workloads and user-defined workloads.
 # You can provide your own workload parameter files
 # by passing variables through the command line
@@ -55,7 +60,8 @@ load_data_once: no
 # be toally skipped without regarding the value of option 'load_data_once'.
 load_data: yes
 
-# Whether to trace the block requests during the load phase
+# Whether to trace the block requests during the load phase.
+# Note that no tracing will happen when data loading is skipped.
 trace_load_block_rq: yes
 
 # Whether to trace the block requests during the transactions phase to get

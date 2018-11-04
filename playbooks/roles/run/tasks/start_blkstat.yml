@@ -1,13 +1,13 @@
 ---
-- name: ({{ notes }}) start to trace the block events for device {{ pdevice_fullname }}
+- name: ({{ notes }}) start to trace the block events for device {{ device_fullname }}
   become: yes
   shell: >
     nohup blktrace
     --act-mask=complete
     --act-mask=issue
     --buffer-size=4096KiB
-    --dev={{ pdevice_fullname }}
-    --output={{ pdevice_name }}
+    --dev={{ device_fullname }}
+    --output={{ device_name }}
     --output-dir={{ remote_blkstat_log_dir }}
     --relay={{ debugfs_mountpoint }}
     < /dev/null > {{ workdir }}/nohup.out 2>&1 &

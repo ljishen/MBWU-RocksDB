@@ -24,6 +24,7 @@
     - debug:
         msg: >
           RocksDB data dir {{ rocksdb_data_dir }} does not contain valid data!
+          You may need to load the data first.
       when: stat_res.stat.isreg is not defined or not stat_res.stat.isreg
       failed_when: stat_res.stat.isreg is not defined or not stat_res.stat.isreg
   when: not load_data
@@ -129,7 +130,7 @@
     local_device_stats_file: "{{ local_output_dir }}/{{ device_stats_filename }}"
     remote_device_stats_file: "{{ remote_output_dir }}/{{ device_stats_filename }}"
     device_stats_command: >
-      grep '{{ pdevice_name }}' /proc/diskstats
+      grep '{{ device_name }}' /proc/diskstats
   loop: "{{ range(1, maximum_rounds + 1) | list }}"
   loop_control:
     loop_var: cur_round

@@ -15,12 +15,12 @@
     path: "{{ remote_blkstat_log_dir }}"
     remove: no
 
-- name: ({{ notes }}) parse output of event streams of {{ pdevice_fullname }}
+- name: ({{ notes }}) parse output of event streams of {{ device_fullname }}
   command: >
     blkparse
     --act-mask={{ event }}
     --input-directory={{ remote_blkstat_log_dir }}
-    --input={{ pdevice_name }}
+    --input={{ device_name }}
     --output={{ remote_blkstat_text_file }}
     --dump-binary={{ remote_blkstat_bin_file }}
     --per-program-stats

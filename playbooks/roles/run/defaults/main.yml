@@ -1,4 +1,6 @@
 ---
+device_mountpoint: /mnt/{{ device_name }}
+
 # Since the YCSB RocksDB binding just combines all the fields into a single
 # byte array as the value. Reducing the field counts helps to free up more CPU
 # resources for the I/O path.
@@ -16,6 +18,15 @@ local_rocksdb_log_file: "{{ local_output_dir }}/LOG_{{ phase }}_round{{ cur_roun
 local_output_dir: "{{ inventory_dir }}/analysis/data/ycsb/{{ inventory_hostname }}/output_{{ cur_workload }}"
 remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"
 
+remote_scripts_dir: "{{ workdir }}/scripts"
+device_purge_script_filename: blkerasediscard.sh
+
+remote_job_files_dir: "{{ workdir }}/job_files"
+
+wipc_output_filename: wipc_round{{ cur_round }}.json
+local_wipc_output_file: "{{ local_output_dir }}/{{ wipc_output_filename }}"
+remote_wipc_output_file: "{{ remote_output_dir }}/{{ wipc_output_filename }}"
+
 local_workload_file: "{{ local_output_dir }}/{{ cur_workload }}"
 remote_workload_file: "{{ remote_output_dir }}/{{ cur_workload }}"
 
@@ -27,27 +38,29 @@ transactions_filename: "transactions_round{{ cur_round }}.dat"
 local_transactions_output_file: "{{ local_output_dir }}/{{ transactions_filename }}"
 remote_transactions_output_file: "{{ remote_output_dir }}/{{ transactions_filename }}"
 
-cpustat_pid_file: "{{ workdir }}/cpustat.pid"
+remote_pid_files_dir: "{{ workdir }}/pid_files"
+
+cpustat_pid_file: "{{ remote_pid_files_dir }}/cpustat.pid"
 cpustat_log_filename: "cpustat.log"
 local_cpustat_log_file: "{{ local_output_dir }}/{{ cpustat_log_filename }}"
 remote_cpustat_log_file: "{{ remote_output_dir }}/{{ cpustat_log_filename }}"
 
-memstat_pid_file: "{{ workdir }}/memstat.pid"
+memstat_pid_file: "{{ remote_pid_files_dir }}/memstat.pid"
 memstat_log_filename: "memstat.log"
 local_memstat_log_file: "{{ local_output_dir }}/{{ memstat_log_filename }}"
 remote_memstat_log_file: "{{ remote_output_dir }}/{{ memstat_log_filename }}"
 
-iostat_pid_file: "{{ workdir }}/iostat.pid"
+iostat_pid_file: "{{ remote_pid_files_dir }}/iostat.pid"
 iostat_log_filename: "iostat.log"
 local_iostat_log_file: "{{ local_output_dir }}/{{ iostat_log_filename }}"
 remote_iostat_log_file: "{{ remote_output_dir }}/{{ iostat_log_filename }}"
 
-pidstat_pid_file: "{{ workdir }}/pidstat.pid"
+pidstat_pid_file: "{{ remote_pid_files_dir }}/pidstat.pid"
 pidstat_log_filename: "pidstat.log"
 local_pidstat_log_file: "{{ local_output_dir }}/{{ pidstat_log_filename }}"
 remote_pidstat_log_file: "{{ remote_output_dir }}/{{ pidstat_log_filename }}"
 
-blkstat_pid_file: "{{ workdir }}/blkstat.pid"
+blkstat_pid_file: "{{ remote_pid_files_dir }}/blkstat.pid"
 blkstat_log_dirname: "blkstat_{{ phase }}_round{{ cur_round }}"
 remote_blkstat_log_dir: "{{ remote_output_dir }}/{{ blkstat_log_dirname }}"
 # See parameter format in module archive for all the available formats
@@ -59,5 +72,5 @@ remote_blkstat_text_file: "{{ remote_output_dir }}/{{ blkstat_text_filename }}"
 blkstat_bin_filename: "blkstat_{{ phase }}_round{{ cur_round }}_{{ event }}.bin"
 remote_blkstat_bin_file: "{{ remote_output_dir }}/{{ blkstat_bin_filename }}"
 
-ioszdist_log_filename: "ioszdist_round{{ cur_round }}.log"
+ioszdist_log_filename: "ioszdist_{{ phase }}_round{{ cur_round }}.log"
 remote_ioszdist_log_file: "{{ remote_output_dir }}/{{ ioszdist_log_filename }}"

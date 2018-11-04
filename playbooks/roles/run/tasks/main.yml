@@ -16,20 +16,49 @@
   loop: "{{ core_workloads }}"
   run_once: yes
 
-- name: get the parent device name of device {{ device_fullname }}
-  shell: >
-    lsblk --noheadings --output pkname {{ device_fullname }} | tail -1
-  register: comm_res
-  changed_when: False
+- name: ensure the presence of remote dirs
+  become: yes
+  file:
+    owner: "{{ ansible_user }}"
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ device_mountpoint }}"
+    - "{{ remote_scripts_dir }}"
+    - "{{ remote_pid_files_dir }}"
 
-- name: save the parent device fullname of device {{ device_fullname }}
-  set_fact:
-    pdevice_fullname: "/dev/{{ comm_res.stdout }}"
-    pdevice_name: "{{ comm_res.stdout }}"
+- block:
+    - name: get size of {{ device_fullname }} in bytes
+      become: yes
+      command: blockdev --getsize64 {{ device_fullname }}
+      register: comm_res
+      changed_when: False
+
+    - set_fact:
+        device_size: "{{ comm_res.stdout }}"
+
+    - name: download device purge script
+      become: yes
+      get_url:
+        backup: no
+        dest: "{{ remote_scripts_dir }}/{{ device_purge_script_filename }}"
+        force: yes
+        mode: u+rx
+        owner: "{{ ansible_user }}"
+        url: https://raw.githubusercontent.com/ljishen/SSSPT/master/playbooks/roles/common/files/{{ device_purge_script_filename }}
+
+    - name: template the workload independent pre-conditioning job file to {{ remote_job_files_dir }}
+      template:
+        backup: no
+        dest: "{{ remote_job_files_dir }}/"
+        force: yes
+        owner: "{{ ansible_user }}"
+        src: wipc.fio
+  when: load_data
 
 - include_tasks: repeat_workload.yml
   vars:
-    rocksdb_data_dir: "{{ mountpoint }}/{{ rocksdb_data_dirname }}"
+    rocksdb_data_dir: "{{ device_mountpoint }}/{{ rocksdb_data_dirname }}"
     cur_workload: "{{ cur_workload_path | basename }}"
     notes: "{{ cur_workload }}"
   loop: "{{ run_workloads }}"

@@ -5,49 +5,7 @@
       become: yes
       shell: pkill -SIGTERM --pidfile {{ blkstat_pid_file }} ; rm --force {{ blkstat_pid_file }}
 
-    - block:
-        - name: ({{ notes }}) ensure the presence of RocksDB data dir {{ rocksdb_data_dir }}
-          become: yes
-          file:
-            owner: "{{ ansible_user }}"
-            path: "{{ rocksdb_data_dir }}"
-            state: "{{ item }}"
-          loop:
-            - absent
-            - directory
-
-        - include_tasks: free_cache.yml
-
-        - include_tasks: start_blkstat.yml
-          when: trace_load_block_rq
-
-        - name: ({{ notes }}) load the data
-          shell: >
-            bin/ycsb load rocksdb -s
-            -P {{ remote_workload_file }}
-            -p rocksdb.dir={{ rocksdb_data_dir }}
-            -p options.file={{ rocksdb_remote_input_options_file }}
-            > {{ remote_load_output_file }} 2>&1
-          args:
-            chdir: "{{ ycsb_dir }}"
-          environment:
-            PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
-
-        - include_tasks: stop_blkstat.yml
-          when: trace_load_block_rq
-
-        - name: ({{ notes }}) print the size of database dir after loaded
-          command: du -BK {{ rocksdb_data_dir }}
-
-        - include_tasks: backup_file.yml
-          vars:
-            local_file: "{{ local_load_output_file }}"
-            remote_file: "{{ remote_load_output_file }}"
-
-        - include_tasks: backup_file.yml
-          vars:
-            local_file: "{{ local_rocksdb_log_file }}"
-            remote_file: "{{ rocksdb_data_dir }}/LOG"
+    - include_tasks: load_data.yml
       vars:
         phase: load
       when: cur_load_data
@@ -63,7 +21,7 @@
         phase: transactions
       when: cur_trace_transactions_block_rq
 
-    - name: ({{ notes }}) get the stats of device {{ pdevice_fullname }} (before)
+    - name: ({{ notes }}) get the stats of device {{ device_fullname }} (before)
       # We don't want to interfere the stats of the block device so just not to
       # write the result directly to file here.
       shell: "{{ device_stats_command }}"
@@ -80,7 +38,7 @@
       environment:
         PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
 
-    - name: ({{ notes }}) get the stats of device {{ pdevice_fullname }} (after)
+    - name: ({{ notes }}) get the stats of device {{ device_fullname }} (after)
       shell: "sync; {{ device_stats_command }}"
       register: after_stats_res
 

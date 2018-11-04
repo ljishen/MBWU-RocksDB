@@ -57,6 +57,9 @@
       - libzstd-dev
       - python3-numpy
       - blktrace
+      - parted
+      - xfsprogs
+      - fio
     state: present
     update_cache: yes
 

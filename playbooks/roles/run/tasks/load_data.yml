@@ -1,0 +1,86 @@
+---
+- name: ({{ notes }}) unmount filesystem for device {{ device_fullname }} if necessary
+  become: yes
+  shell: |
+    if findmnt --source {{ device_fullname }} > /dev/null 2>&1; then
+      umount {{ device_fullname }}
+    fi
+
+- name: ({{ notes }}) remove all partitions from device {{ device_fullname }}
+  become: yes
+  parted:
+    device: "{{ device_fullname }}"
+    number: "{{ ansible_devices[device_name]['partitions'] | length }}"
+    state: absent
+  when: ansible_devices[device_name]['partitions'] | length > 0
+
+- name: ({{ notes }}) purge device {{ device_fullname }}
+  become: yes
+  command: >
+    {{ remote_scripts_dir }}/{{ device_purge_script_filename }} {{ device_fullname }}
+
+- name: ({{ notes }}) run workload independent pre-conditioning on {{ device_fullname }}
+  become: yes
+  command: >
+    {{ fio_bin }} {{ remote_job_files_dir }}/wipc.fio
+    --output-format=json+
+    --output {{ remote_wipc_output_file }}
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_wipc_output_file }}"
+    remote_file: "{{ remote_wipc_output_file }}"
+
+- name: ({{ notes }}) create xfs filesystem for device {{ device_fullname }}
+  become: yes
+  filesystem:
+    dev: "{{ device_fullname }}"
+    force: yes
+    fstype: xfs
+
+- name: ({{ notes }}) mount device {{ device_fullname }} to {{ device_mountpoint }}
+  become: yes
+  command: mount {{ device_fullname }} {{ device_mountpoint }}
+  args:
+    warn: no
+
+- name: ({{ notes }}) ensure the presence of RocksDB data dir {{ rocksdb_data_dir }}
+  become: yes
+  file:
+    owner: "{{ ansible_user }}"
+    path: "{{ rocksdb_data_dir }}"
+    state: directory
+
+- include_tasks: free_cache.yml
+
+- include_tasks: start_blkstat.yml
+  when: trace_load_block_rq
+
+- name: ({{ notes }}) load the data
+  shell: >
+    bin/ycsb load rocksdb -s
+    -P {{ remote_workload_file }}
+    -p rocksdb.dir={{ rocksdb_data_dir }}
+    -p options.file={{ rocksdb_remote_input_options_file }}
+    > {{ remote_load_output_file }} 2>&1
+  args:
+    chdir: "{{ ycsb_dir }}"
+  environment:
+    PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+
+- include_tasks: stop_blkstat.yml
+  when: trace_load_block_rq
+
+- name: ({{ notes }}) print the size of database dir after loaded
+  command: du -BK {{ rocksdb_data_dir }}
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_load_output_file }}"
+    remote_file: "{{ remote_load_output_file }}"
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_rocksdb_log_file }}"
+    remote_file: "{{ rocksdb_data_dir }}/LOG"
+...

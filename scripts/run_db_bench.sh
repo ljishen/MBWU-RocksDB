@@ -34,7 +34,7 @@ DISKSTATS_LOG_A="$OUTPUT_BASE"/diskstats_a.log     # log the after stats
 
 device_fullname="$(findmnt --noheadings --output SOURCE --mountpoint "$mountpoint" || true)"
 if [ -n "$device_fullname" ]; then
-    device_info="$("$REPO_DIR"/playbooks/roles/run/files/devname2id.sh "$device_fullname")"
+    device_info="$("$REPO_DIR"/analysis/tools/devname2id.sh "$device_fullname")"
     pdevice_fullname="$(echo "$device_info" | head -1)"
     pdevice_id="$(echo "$device_info" | tail -1)"
 
@@ -467,7 +467,7 @@ if [ "$do_trace_blk_rq" = true ]; then
 
     IOSZDIST_LOG="$OUTPUT_BASE"/ioszdist.log
     newline_print "generating I/O size distribution to $IOSZDIST_LOG"
-    "$REPO_DIR"/playbooks/roles/run/files/ioszdist.sh "$BLKSTAT_LOG" | tee "$IOSZDIST_LOG"
+    "$REPO_DIR"/analysis/tools/ioszdist.sh "$BLKSTAT_LOG" | tee "$IOSZDIST_LOG"
     rm "$OUTPUT_BASE"/events.dat "$OUTPUT_BASE"/sectors.dat
 fi
 
