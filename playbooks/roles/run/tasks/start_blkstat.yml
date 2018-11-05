@@ -11,7 +11,6 @@
     --output-dir={{ remote_blkstat_log_dir }}
     --relay={{ debugfs_mountpoint }}
     < /dev/null > {{ workdir }}/nohup.out 2>&1 &
-    echo $! > {{ blkstat_pid_file }}
 
 - name: ({{ notes }}) pause to wait for the tracer to start
   pause:

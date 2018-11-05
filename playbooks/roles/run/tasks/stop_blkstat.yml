@@ -1,7 +1,7 @@
 ---
 - name: ({{ notes }}) stop to trace block requests
   become: yes
-  shell: pkill -SIGINT --pidfile {{ blkstat_pid_file }} ; rm --force {{ blkstat_pid_file }}
+  command: pkill -SIGINT --full blktrace.+{{ device_name }}
 
 - name: ({{ notes }}) pause to wait for the block request tracer to finish
   pause:

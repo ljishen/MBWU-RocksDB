@@ -56,6 +56,11 @@
         src: wipc.fio
   when: load_data
 
+- name: kill the remnant processes for tracing block requests
+  become: yes
+  command: pkill -SIGINT --full blktrace.+{{ device_name }}
+  ignore_errors: yes
+
 - include_tasks: repeat_workload.yml
   vars:
     rocksdb_data_dir: "{{ device_mountpoint }}/{{ rocksdb_data_dirname }}"

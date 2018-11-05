@@ -60,7 +60,6 @@ pidstat_log_filename: "pidstat.log"
 local_pidstat_log_file: "{{ local_output_dir }}/{{ pidstat_log_filename }}"
 remote_pidstat_log_file: "{{ remote_output_dir }}/{{ pidstat_log_filename }}"
 
-blkstat_pid_file: "{{ remote_pid_files_dir }}/blkstat.pid"
 blkstat_log_dirname: "blkstat_{{ phase }}_round{{ cur_round }}"
 remote_blkstat_log_dir: "{{ remote_output_dir }}/{{ blkstat_log_dirname }}"
 # See parameter format in module archive for all the available formats

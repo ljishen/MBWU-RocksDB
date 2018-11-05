@@ -1,10 +1,6 @@
 ---
 - block:
 
-    - name: ({{ notes }}) kill the remnant processes for tracing block requests
-      become: yes
-      shell: pkill -SIGTERM --pidfile {{ blkstat_pid_file }} ; rm --force {{ blkstat_pid_file }}
-
     - include_tasks: load_data.yml
       vars:
         phase: load
