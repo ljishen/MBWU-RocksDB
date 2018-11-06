@@ -143,7 +143,7 @@ fi
 daemon_report_interval_sec="${DAEMON_REPORT_INTERVAL_SEC:-3}"
 
 declare -A daemon_commands=(
-    [iostat]="iostat -dktxyzH -g $device_fullname $daemon_report_interval_sec"
+    [iostat]="iostat -dktxyzH -g $device_fullname $device_fullname $daemon_report_interval_sec"
     [mpstat]="mpstat -P ALL $daemon_report_interval_sec"
     [pidstat]="pidstat -G db_bench -ult $daemon_report_interval_sec"
 )

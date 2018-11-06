@@ -105,7 +105,7 @@
     - { command: "vmstat --one-header --wide --unit K --timestamp {{ perf_stats_report_interval_sec }}",
         remote_log_file: "{{ remote_memstat_log_file }}",
         pid_file: "{{ memstat_pid_file }}" }
-    - { command: "iostat -dktxyzH -g {{ device_fullname }} {{ perf_stats_report_interval_sec }}",
+    - { command: "iostat -dktxyzH -g {{ device_name }} {{ device_fullname }} {{ perf_stats_report_interval_sec }}",
         remote_log_file: "{{ remote_iostat_log_file }}",
         pid_file: "{{ iostat_pid_file }}" }
     - { command: "pidstat -G java -ult {{ perf_stats_report_interval_sec }}",
