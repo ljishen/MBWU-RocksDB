@@ -21,7 +21,9 @@ remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"
 remote_scripts_dir: "{{ workdir }}/scripts"
 device_purge_script_filename: blkerasediscard.sh
 
-remote_job_files_dir: "{{ workdir }}/job_files"
+wipc_job_filename: wipc.fio
+remote_wipc_job_file: "{{ remote_output_dir }}/{{ wipc_job_filename }}"
+local_wipc_job_file: "{{ local_output_dir }}/{{ wipc_job_filename }}"
 
 wipc_output_filename: wipc_round{{ cur_round }}.json
 local_wipc_output_file: "{{ local_output_dir }}/{{ wipc_output_filename }}"

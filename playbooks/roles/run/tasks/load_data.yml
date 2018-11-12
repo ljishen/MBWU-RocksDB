@@ -22,7 +22,7 @@
 - name: ({{ notes }}) run workload independent pre-conditioning on {{ device_fullname }}
   become: yes
   command: >
-    {{ fio_bin }} {{ remote_job_files_dir }}/wipc.fio
+    {{ fio_bin }} {{ remote_wipc_job_file }}
     --output-format=json+
     --output {{ remote_wipc_output_file }}
 
