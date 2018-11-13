@@ -38,7 +38,6 @@
         device_size: "{{ comm_res.stdout }}"
 
     - name: download device purge script
-      become: yes
       get_url:
         backup: no
         dest: "{{ remote_scripts_dir }}/{{ device_purge_script_filename }}"
@@ -46,19 +45,6 @@
         mode: u+rx
         owner: "{{ ansible_user }}"
         url: https://raw.githubusercontent.com/ljishen/SSSPT/master/playbooks/roles/common/files/{{ device_purge_script_filename }}
-
-    - name: deploy the workload independent pre-conditioning job file
-      template:
-        backup: no
-        dest: "{{ remote_wipc_job_file }}"
-        force: yes
-        owner: "{{ ansible_user }}"
-        src: "{{ wipc_job_filename }}"
-
-    - include_tasks: backup_file.yml
-      vars:
-        local_file: "{{ local_wipc_job_file }}"
-        remote_file: "{{ remote_wipc_job_file }}"
   when: load_data
 
 - name: kill the remnant processes for tracing block requests
