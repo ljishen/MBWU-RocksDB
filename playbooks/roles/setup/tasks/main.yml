@@ -25,9 +25,11 @@
         repo: ppa:webupd8team/java
         state: present
         update_cache: yes
+
     - name: auto accept Oracle license
       shell: >
         echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
+
     - name: install JDK 8
       apt:
         install_recommends: no
@@ -174,11 +176,15 @@
       register: comm_res
       changed_when: False
       ignore_errors: yes
+
     - name: mount the debugfs if necessary
       become: yes
       command: mount -t debugfs none /sys/kernel/debug
+      args:
+        warn: no
       changed_when: comm_res.rc != 0
       when: comm_res.rc != 0
+
     - name: save the mountpoint of debugfs
       set_fact:
         debugfs_mountpoint: "{{ comm_res.stdout if comm_res.rc == 0 else '/sys/kernel/debug' }}"

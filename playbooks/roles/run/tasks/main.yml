@@ -50,6 +50,8 @@
 - name: kill the remnant processes for tracing block requests
   become: yes
   command: pkill -SIGINT --full blktrace.+{{ device_name }}
+  register: comm_res
+  changed_when: comm_res.rc == 0
   ignore_errors: yes
 
 - include_tasks: repeat_workload.yml
