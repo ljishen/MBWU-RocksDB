@@ -24,6 +24,7 @@
     state: directory
   loop:
     - "{{ device_mountpoint }}"
+    - "{{ remote_scripts_dir }}"
     - "{{ remote_pid_files_dir }}"
 
 - block:
@@ -45,6 +46,14 @@
         owner: "{{ ansible_user }}"
         url: https://raw.githubusercontent.com/ljishen/SSSPT/master/playbooks/roles/common/files/{{ device_purge_script_filename }}
   when: load_data
+
+- name: copy the script for generating I/O size distribution to the remote
+  copy:
+    backup: no
+    dest: "{{ remote_scripts_dir }}/"
+    force: yes
+    mode: u+rx
+    src: "{{ role_path }}/files/{{ io_size_dist_script_filename }}"
 
 - name: kill the remnant processes for tracing block requests
   become: yes

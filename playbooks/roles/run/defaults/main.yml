@@ -18,7 +18,9 @@ local_rocksdb_log_file: "{{ local_output_dir }}/LOG_{{ phase }}_round{{ cur_roun
 local_output_dir: "{{ inventory_dir }}/analysis/data/ycsb/{{ inventory_hostname }}/output_{{ cur_workload }}"
 remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"
 
+remote_scripts_dir: "{{ workdir }}/scripts"
 device_purge_script_filename: blkerasediscard.sh
+io_size_dist_script_filename: ioszdist.sh
 
 wipc_job_filename: wipc.fio
 remote_wipc_job_file: "{{ remote_output_dir }}/{{ wipc_job_filename }}"

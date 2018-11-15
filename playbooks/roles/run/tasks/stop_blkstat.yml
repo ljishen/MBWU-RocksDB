@@ -44,7 +44,7 @@
 
 - name: ({{ notes }}) generate I/O size distribution
   shell: >
-    {{ role_path }}/files/ioszdist.sh {{ remote_blkstat_text_file }}
+    {{ remote_scripts_dir }}/{{ io_size_dist_script_filename }} {{ remote_blkstat_text_file }}
     > {{ remote_ioszdist_log_file }} 2>&1
   vars:
     event: complete

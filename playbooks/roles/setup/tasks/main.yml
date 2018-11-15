@@ -176,25 +176,9 @@
     chdir: "{{ ycsb_dir }}"
   when: git_res.after != git_res.before or find_res.matched == 0
 
-- name: ensure the presence of remote scripts dir {{ remote_scripts_dir }}
-  become: yes
-  file:
-    owner: "{{ ansible_user }}"
-    path: "{{ remote_scripts_dir }}"
-    state: directory
-
-- name: copy the config cpu script to the remote
-  copy:
-    backup: no
-    dest: "{{ remote_scripts_dir }}/"
-    force: yes
-    mode: u+rx
-    src: "{{ role_path }}/files/config_cpu.sh"
-  register: copy_res
-
 - name: config scaling governor for online CPUs
   become: yes
-  command: "{{ copy_res.dest }} {{ cpu_scaling_governor }}"
+  script: "{{ role_path }}/files/config_cpu.sh {{ cpu_scaling_governor }}"
   register: cpu_config_res
   changed_when: "cpu_config_res.rc == 0"
 
