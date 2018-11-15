@@ -24,7 +24,6 @@
     state: directory
   loop:
     - "{{ device_mountpoint }}"
-    - "{{ remote_scripts_dir }}"
     - "{{ remote_pid_files_dir }}"
 
 - block:
@@ -37,7 +36,7 @@
     - set_fact:
         device_size: "{{ comm_res.stdout }}"
 
-    - name: download device purge script
+    - name: download the device purge script
       get_url:
         backup: no
         dest: "{{ remote_scripts_dir }}/{{ device_purge_script_filename }}"

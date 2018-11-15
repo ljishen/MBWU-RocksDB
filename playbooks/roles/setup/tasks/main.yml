@@ -65,13 +65,33 @@
     state: present
     update_cache: yes
 
-- name: patch rocksdb-{{ rocksdb_version }}
-  # '-N' option instructs applying patch only forwardly without trying reverse-apply
-  # '-r -' option instructs not to create rejectfile
-  shell: patch -N -r - < {{ role_path }}/files/rocksdb-{{ rocksdb_version }}.patch || true
-  args:
-    chdir: "{{ rocksdb_dir }}"
-    removes: "{{ role_path }}/files/rocksdb-{{ rocksdb_version }}.patch"
+- name: check if rocksdb-{{ rocksdb_version }}.patch exists
+  local_action:
+    module: stat
+    follow: no
+    get_attributes: no
+    get_checksum: no
+    get_md5: no
+    get_mime: no
+    path: "{{ role_path }}/files/rocksdb-{{ rocksdb_version }}.patch"
+  register: stat_res
+
+- block:
+    - name: copy rocksdb-{{ rocksdb_version }}.patch to the remote
+      copy:
+        backup: no
+        dest: "{{ workdir }}/patches/"
+        force: yes
+        src: "{{ stat_res.stat.path }}"
+      register: copy_res
+
+    - name: apply patch to rocksdb-{{ rocksdb_version }}
+      # '-N' option instructs applying patch only forwardly without trying reverse-apply
+      # '-r -' option instructs not to create rejectfile
+      shell: patch -N -r - < {{ copy_res.dest }} || true
+      args:
+        chdir: "{{ rocksdb_dir }}"
+  when: stat_res.stat.isreg is defined and stat_res.stat.isreg
 
 - name: build RocksJava (may take a long time)
   command: >
@@ -156,9 +176,25 @@
     chdir: "{{ ycsb_dir }}"
   when: git_res.after != git_res.before or find_res.matched == 0
 
+- name: ensure the presence of remote scripts dir {{ remote_scripts_dir }}
+  become: yes
+  file:
+    owner: "{{ ansible_user }}"
+    path: "{{ remote_scripts_dir }}"
+    state: directory
+
+- name: copy the config cpu script to the remote
+  copy:
+    backup: no
+    dest: "{{ remote_scripts_dir }}/"
+    force: yes
+    mode: u+rx
+    src: "{{ role_path }}/files/config_cpu.sh"
+  register: copy_res
+
 - name: config scaling governor for online CPUs
   become: yes
-  command: "{{ role_path }}/files/config_cpu.sh {{ cpu_scaling_governor }}"
+  command: "{{ copy_res.dest }} {{ cpu_scaling_governor }}"
   register: cpu_config_res
   changed_when: "cpu_config_res.rc == 0"
 

@@ -6,6 +6,7 @@
     ycsb_dir: "{{ workdir }}/YCSB"
     maven_dir: "{{ workdir }}/apache-maven-{{ maven_version }}"
     device_fullname: /dev/{{ device_name }}
+    remote_scripts_dir: "{{ workdir }}/scripts"
   pre_tasks:
     - name: retrieve the stat of block device {{ device_fullname }}
       stat:
@@ -27,7 +28,8 @@
       set_fact:
         run_workloads: "{{ ycsb_run_workloads.split(',') }}"
     - name: retrieve the stats of user-defined workload parameter files
-      stat:
+      local_action:
+        module: stat
         follow: yes
         get_attributes: no
         path: "{{ item }}"
