@@ -37,6 +37,7 @@
     dev: "{{ device_fullname }}"
     force: yes
     fstype: xfs
+    opts: -K
 
 - name: ({{ notes }}) mount device {{ device_fullname }} to {{ device_mountpoint }}
   become: yes
