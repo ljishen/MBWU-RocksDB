@@ -7,7 +7,7 @@ device_mountpoint: /mnt/{{ device_name }}
 fieldcount: 1
 
 # (DO NOT CHANGE) Use the last x number of values to detect steady state.
-measurement_window_size: 5
+measurement_window_size: 3
 
 perf_stats_report_interval_sec: 3
 
