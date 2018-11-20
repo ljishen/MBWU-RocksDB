@@ -1,0 +1,3 @@
+[submodule "ycsb-rocksdb-data"]
+	path = analysis
+	url = https://github.com/ljishen/ycsb-rocksdb-data.git
