@@ -61,6 +61,7 @@
   shell: >
     bin/ycsb load rocksdb -s
     -P {{ remote_workload_file }}
+    -target {{ target_ops_per_sec_on_load }}
     -p rocksdb.dir={{ rocksdb_data_dir }}
     -p options.file={{ rocksdb_remote_input_options_file }}
     > {{ remote_load_output_file }} 2>&1
