@@ -61,6 +61,7 @@
       - blktrace
       - parted
       - xfsprogs
+      - hdparm
       - fio
     state: present
     update_cache: yes

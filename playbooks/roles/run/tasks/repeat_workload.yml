@@ -14,6 +14,16 @@
     path: "{{ local_output_dir }}"
     state: directory
 
+- name: request identification info of drive {{ device_fullname }}
+  become: yes
+  shell: >
+    hdparm -I {{ device_fullname }} > {{ remote_hdparm_id_info_file }}
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_hdparm_id_info_file }}"
+    remote_file: "{{ remote_hdparm_id_info_file }}"
+
 - block:
     - name: ({{ notes }}) check the validity of the RocksDB data dir {{ rocksdb_data_dir }}
       stat:
