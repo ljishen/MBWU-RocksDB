@@ -1,9 +1,5 @@
 *.retry
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-output_*
 tmp
 
 __pycache__/
