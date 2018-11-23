@@ -29,7 +29,7 @@
 
 - block:
     - name: get info of command {{ fio_bin }} from the shell
-      command: command -v {{ fio_bin }}
+      shell: command -v {{ fio_bin }}
       changed_when: False
       ignore_errors: yes
       register: comm_res
@@ -46,7 +46,6 @@
       command: blockdev --getsize64 {{ device_fullname }}
       changed_when: False
       register: comm_res
-      changed_when: False
 
     - set_fact:
         device_size: "{{ comm_res.stdout }}"
