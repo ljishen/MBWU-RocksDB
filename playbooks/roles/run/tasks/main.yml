@@ -28,9 +28,23 @@
     - "{{ remote_pid_files_dir }}"
 
 - block:
+    - name: get info of command {{ fio_bin }} from the shell
+      command: command -v {{ fio_bin }}
+      changed_when: False
+      ignore_errors: yes
+      register: comm_res
+
+    - name: verify the existence of {{ fio_bin }}
+      debug:
+        msg: >
+          Please double check the existence of the fio path {{ fio_bin }}
+      when: comm_res.rc != 0
+      failed_when: comm_res != 0
+
     - name: get size of {{ device_fullname }} in bytes
       become: yes
       command: blockdev --getsize64 {{ device_fullname }}
+      changed_when: False
       register: comm_res
       changed_when: False
 
