@@ -27,7 +27,7 @@ ycsb_run_workloads: "{{ playbook_dir }}/roles/run/templates/myworkloada"
 # Target number of operations per second for throttling the data insertion
 # during the loading phase to help to build a steady LSM tree (by allowing
 # more time for compaction). Setting to value of 0 to disable the throttling.
-target_ops_per_sec_on_load: 5000
+target_ops_per_sec_on_load: 4000
 
 # The default maximum number of iteration to evaluate the steady state for
 # each test. For some volatile drive which is harder to get to the steady
