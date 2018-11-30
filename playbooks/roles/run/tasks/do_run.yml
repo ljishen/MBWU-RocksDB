@@ -36,8 +36,15 @@
         PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
 
     - name: ({{ notes }}) get the PID of the YCSB transactions process
-      command: pgrep -u {{ ansible_user }} --full java.+{{ remote_workload_file }}
+      shell: >
+        ps -eo user,pid,ppid,c,stime,tname,time,args |
+        grep -E [j]ava.+{{ remote_workload_file }} |
+        awk '{print $2}'
       register: comm_ycsb_transactions_pid
+      until: comm_ycsb_transactions_pid.stdout != ""
+      retries: 120
+      delay: 1
+      changed_when: False
 
     - name: ({{ notes }}) backup YCSB transactions PID
       shell: echo {{ comm_ycsb_transactions_pid.stdout }} > {{ ycsb_transactions_pid_file }}

@@ -1,7 +1,9 @@
 ---
 - name: ({{ notes }}) stop to trace block requests
   become: yes
-  command: pkill -SIGINT --full blktrace.+{{ device_name }}
+  command: pkill -SIGINT --full blktrace.+{{ device_fullname }}
+  register: comm_res
+  changed_when: comm_res.rc == 0
 
 - name: ({{ notes }}) pause to wait for the block request tracer to finish
   pause:

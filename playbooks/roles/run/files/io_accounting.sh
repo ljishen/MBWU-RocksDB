@@ -22,7 +22,7 @@ This script may require privilege escalation on some system.
 See section 3.3 /proc/<pid>/io - Display the IO accounting fields
 from https://www.kernel.org/doc/Documentation/filesystems/proc.txt
 ENDOFMESSAGE
-    exit
+    exit 1
 fi
 
 PID="$1"
