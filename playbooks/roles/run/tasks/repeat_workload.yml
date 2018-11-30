@@ -104,13 +104,14 @@
     local_file: "{{ local_workload_file }}"
     remote_file: "{{ remote_workload_file }}"
 
-- name: ({{ notes }}) kill the remnant processes for collecting system performance statistics
+- name: ({{ notes }}) kill the remnant processes from previous run
   shell: pkill -SIGTERM --pidfile {{ item }} ; rm --force {{ item }}
   loop:
     - "{{ cpustat_pid_file }}"
     - "{{ memstat_pid_file }}"
     - "{{ iostat_pid_file }}"
     - "{{ pidstat_pid_file }}"
+    - "{{ ycsb_transactions_pid_file }}"
 
 - name: ({{ notes }}) start to collect system performance statistics
   # we use stdbuf to turn off the buffering of the output redirection.

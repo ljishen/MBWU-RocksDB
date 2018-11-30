@@ -10,7 +10,7 @@
     --output={{ device_name }}
     --output-dir={{ remote_blkstat_log_dir }}
     --relay={{ debugfs_mountpoint }}
-    < /dev/null > {{ workdir }}/nohup.out 2>&1 &
+    < /dev/null > {{ workdir }}/blkstat_nohup.out 2>&1 &
 
 - name: ({{ notes }}) pause to wait for the tracer to start
   pause:

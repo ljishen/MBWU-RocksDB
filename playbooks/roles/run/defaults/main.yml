@@ -25,6 +25,7 @@ local_hdparm_id_info_file: "{{ local_output_dir }}/{{ hdparm_id_info_filename }}
 remote_scripts_dir: "{{ workdir }}/scripts"
 device_purge_script_filename: blkerasediscard.sh
 io_size_dist_script_filename: ioszdist.sh
+io_accounting_script_filename: io_accounting.sh
 
 wipc_job_filename: wipc.fio
 remote_wipc_job_file: "{{ remote_output_dir }}/{{ wipc_job_filename }}"
@@ -66,6 +67,12 @@ pidstat_pid_file: "{{ remote_pid_files_dir }}/pidstat.pid"
 pidstat_log_filename: "pidstat.log"
 local_pidstat_log_file: "{{ local_output_dir }}/{{ pidstat_log_filename }}"
 remote_pidstat_log_file: "{{ remote_output_dir }}/{{ pidstat_log_filename }}"
+
+ycsb_transactions_pid_file: "{{ remote_pid_files_dir }}/ycsb_transactions.pid"
+
+io_accounting_filename: "io_accounting_round{{ cur_round }}.log"
+local_io_accounting_file: "{{ local_output_dir }}/{{ io_accounting_filename }}"
+remote_io_accounting_file: "{{ remote_output_dir }}/{{ io_accounting_filename }}"
 
 blkstat_log_dirname: "blkstat_{{ phase }}_round{{ cur_round }}"
 remote_blkstat_log_dir: "{{ remote_output_dir }}/{{ blkstat_log_dirname }}"

@@ -23,16 +23,26 @@
       shell: "{{ device_stats_command }}"
       register: before_stats_res
 
-    - name: ({{ notes }}) execute the workload
+    - name: ({{ notes }}) execute the workload in the background
       shell: >
+        nohup stdbuf -oL -eL
         bin/ycsb run rocksdb -s
         -P {{ remote_workload_file }}
         -p rocksdb.dir={{ rocksdb_data_dir }}
-        > {{ remote_transactions_output_file }} 2>&1
+        < /dev/null > {{ remote_transactions_output_file }} 2>&1 &
+        echo $! > {{ ycsb_transactions_pid_file }}
       args:
         chdir: "{{ ycsb_dir }}"
       environment:
         PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+
+    - name: ({{ notes }}) record IO accounting for the YCSB transactions process until terminated
+      become: yes
+      shell: >
+        {{ remote_scripts_dir }}/{{ io_accounting_script_filename }}
+        "$(cat {{ ycsb_transactions_pid_file }})"
+        {{ remote_io_accounting_file }} {{ perf_stats_report_interval_sec }}
+      ignore_errors: True
 
     - name: ({{ notes }}) get the stats of device {{ device_fullname }} (after)
       shell: "sync; {{ device_stats_command }}"
@@ -69,8 +79,13 @@
 
     - include_tasks: backup_file.yml
       vars:
-        local_file: "{{ local_transactions_output_file }}"
-        remote_file: "{{ remote_transactions_output_file }}"
+        local_file: "{{ item.local_file }}"
+        remote_file: "{{ item.remote_file }}"
+      loop:
+        - { local_file: "{{ local_transactions_output_file }}",
+            remote_file: "{{ remote_transactions_output_file }}" }
+        - { local_file: "{{ local_io_accounting_file }}",
+            remote_file: "{{ remote_io_accounting_file }}" }
 
     - include_tasks: backup_file.yml
       vars:

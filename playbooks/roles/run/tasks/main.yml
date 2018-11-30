@@ -60,13 +60,16 @@
         url: https://raw.githubusercontent.com/ljishen/SSSPT/master/playbooks/roles/common/files/{{ device_purge_script_filename }}
   when: load_data
 
-- name: copy the script for generating I/O size distribution to the remote
+- name: copy required scripts to the remote
   copy:
     backup: no
     dest: "{{ remote_scripts_dir }}/"
     force: yes
     mode: u+rx
-    src: "{{ role_path }}/files/{{ io_size_dist_script_filename }}"
+    src: "{{ role_path }}/files/{{ item }}"
+  loop:
+    - "{{ io_size_dist_script_filename }}"
+    - "{{ io_accounting_script_filename }}"
 
 - name: kill the remnant processes for tracing block requests
   become: yes
