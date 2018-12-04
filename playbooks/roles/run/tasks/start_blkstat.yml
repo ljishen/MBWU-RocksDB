@@ -3,8 +3,6 @@
   become: yes
   shell: >
     nohup blktrace
-    --act-mask=complete
-    --act-mask=issue
     --buffer-size=4096KiB
     --dev={{ device_fullname }}
     --output={{ device_name }}

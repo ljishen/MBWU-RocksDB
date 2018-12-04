@@ -82,7 +82,7 @@ blkstat_archive_format: gz
 remote_blkstat_log_archive: "{{ remote_blkstat_log_dir }}.{{ blkstat_archive_format }}"
 blkstat_text_filename: "blkstat_{{ phase }}_round{{ cur_round }}_{{ event }}.log"
 remote_blkstat_text_file: "{{ remote_output_dir }}/{{ blkstat_text_filename }}"
-blkstat_bin_filename: "blkstat_{{ phase }}_round{{ cur_round }}_{{ event }}.bin"
+blkstat_bin_filename: "blkstat_{{ phase }}_round{{ cur_round }}.bin"
 remote_blkstat_bin_file: "{{ remote_output_dir }}/{{ blkstat_bin_filename }}"
 
 ioszdist_log_filename: "ioszdist_{{ phase }}_round{{ cur_round }}.log"
