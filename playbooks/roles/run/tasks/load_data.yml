@@ -41,7 +41,7 @@
 
 - name: ({{ notes }}) mount device {{ device_fullname }} to {{ device_mountpoint }}
   become: yes
-  command: mount {{ device_fullname }} {{ device_mountpoint }}
+  command: mount -o nodiscard {{ device_fullname }} {{ device_mountpoint }}
   args:
     warn: no
 
