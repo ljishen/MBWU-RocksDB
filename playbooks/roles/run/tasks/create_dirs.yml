@@ -1,0 +1,13 @@
+---
+- name: ensure the presence of remote dirs
+  become: yes
+  file:
+    owner: "{{ ansible_user }}"
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ device_mountpoint }}"
+    - "{{ remote_pid_files_dir }}"
+    - "{{ remote_nohup_output_dir }}"
+    - "{{ remote_scripts_dir }}"
+...

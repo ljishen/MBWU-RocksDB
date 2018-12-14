@@ -1,5 +1,5 @@
 ---
-- name: ({{ notes }}) start to trace the block events for device {{ device_fullname }}
+- name: ({{ notes }}) start to trace the block events for devices
   become: yes
   shell: >
     nohup blktrace
@@ -8,9 +8,14 @@
     --output={{ device_name }}
     --output-dir={{ remote_blkstat_log_dir }}
     --relay={{ debugfs_mountpoint }}
-    < /dev/null > {{ workdir }}/blkstat_nohup.out 2>&1 &
+    < /dev/null > {{ remote_nohup_output_dir }}/blkstat_nohup.out 2>&1 &
+  vars:
+    device_name: "{{ device_fullname | basename }}"
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
 
 - name: ({{ notes }}) pause to wait for the tracer to start
   pause:
-    seconds: 3
+    seconds: 5
 ...

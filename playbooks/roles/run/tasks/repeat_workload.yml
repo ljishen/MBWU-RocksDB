@@ -1,42 +1,60 @@
 ---
-- name: ({{ notes }}) ensure the presence of remote output dir {{ remote_output_dir }}
+- name: ({{ notes }}) ensure the presence of remote output dirs
   become: yes
   file:
     owner: "{{ ansible_user }}"
     path: "{{ remote_output_dir }}"
     state: directory
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- name: ({{ notes }}) ensure the presence of local output dir {{ local_output_dir }}
+- name: ({{ notes }}) ensure the presence of local output dirs
   become: yes
   local_action:
     module: file
     owner: "{{ lookup('env', 'USER') }}"
     path: "{{ local_output_dir }}"
     state: directory
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- name: request identification info of drive {{ device_fullname }}
+- name: ({{ notes }}) request identification info of drives
   become: yes
   shell: >
     hdparm -I {{ device_fullname }} > {{ remote_hdparm_id_info_file }}
+  vars:
+    device_name: "{{ device_fullname | basename }}"
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
 
 - include_tasks: backup_file.yml
   vars:
     local_file: "{{ local_hdparm_id_info_file }}"
     remote_file: "{{ remote_hdparm_id_info_file }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
 - block:
-    - name: ({{ notes }}) check the validity of the RocksDB data dir {{ rocksdb_data_dir }}
+    - name: ({{ notes }}) check the validity of the RocksDB data dirs
       stat:
         follow: yes
         path: "{{ rocksdb_data_dir }}/CURRENT"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
       register: stat_res
 
     - debug:
         msg: >
-          RocksDB data dir {{ rocksdb_data_dir }} does not contain valid data!
+          RocksDB data dir {{ item.invocation.module_args.path | dirname }} does not contain valid data!
           You may need to load the data first.
-      when: stat_res.stat.isreg is not defined or not stat_res.stat.isreg
-      failed_when: stat_res.stat.isreg is not defined or not stat_res.stat.isreg
+      when: item.stat.isreg is not defined or not item.stat.isreg
+      failed_when: item.stat.isreg is not defined or not item.stat.isreg
+      loop: "{{ stat_res.results }}"
   when: not load_data
 
 - block:
@@ -47,11 +65,19 @@
         force: yes
         owner: "{{ ansible_user }}"
         src: "{{ wipc_job_filename }}"
+      vars:
+        device_name: "{{ device_fullname | basename }}"
+      loop: "{{ device_fullnames }}"
+      loop_control:
+        loop_var: device_fullname
 
     - include_tasks: backup_file.yml
       vars:
         local_file: "{{ local_wipc_job_file }}"
         remote_file: "{{ remote_wipc_job_file }}"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
 
     - name: ({{ notes }}) deploy the RocksDB options file
       template:
@@ -60,6 +86,9 @@
         force: yes
         owner: "{{ ansible_user }}"
         src: "{{ rocksdb_options_file }}"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
   when: load_data
 
 - name: ({{ notes }}) copy user-defined workload parameter file to {{ local_tmp_data_dir }}
@@ -80,6 +109,9 @@
     force: yes
     owner: "{{ ansible_user }}"
     src: "{{ local_tmp_data_dir }}/{{ cur_workload }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
   register: template_res
 
 - name: ({{ notes }}) append common properties to parameter file
@@ -91,57 +123,41 @@
     owner: "{{ ansible_user }}"
     path: "{{ remote_workload_file }}"
     state: present
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
 - name: ({{ notes }}) clean backup
   shell: |
-    if cmp -s {{ template_res.backup_file }} {{ remote_workload_file }}; then
-      rm -f {{ template_res.backup_file }}
+    if cmp -s {{ item.backup_file }} {{ item.dest }}; then
+      rm --force {{ item.backup_file }}
     fi
-  when: template_res.backup_file is defined
+  when: item.backup_file is defined
+  loop: "{{ template_res.results }}"
 
 - include_tasks: backup_file.yml
   vars:
     local_file: "{{ local_workload_file }}"
     remote_file: "{{ remote_workload_file }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- name: ({{ notes }}) kill the remnant processes from previous run
-  shell: pkill -SIGTERM --pidfile {{ item }} ; rm --force {{ item }}
-  loop:
-    - "{{ cpustat_pid_file }}"
-    - "{{ memstat_pid_file }}"
-    - "{{ iostat_pid_file }}"
-    - "{{ pidstat_pid_file }}"
-    - "{{ ycsb_transactions_pid_file }}"
+- include_tasks: kill_procs.yml
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- name: ({{ notes }}) start to collect system performance statistics
-  # we use stdbuf to turn off the buffering of the output redirection.
-  #   https://linux.die.net/man/1/stdbuf
-  #   https://stackoverflow.com/a/1429973
-  shell: >
-    nohup stdbuf -oL -eL {{ item.command }} < /dev/null > {{ item.remote_log_file }} 2>&1 &
-    echo $! > {{ item.pid_file }}
-  environment:
-    S_TIME_FORMAT: ISO
-  loop:
-    - { command: "mpstat -P ALL {{ perf_stats_report_interval_sec }}",
-        remote_log_file: "{{ remote_cpustat_log_file }}",
-        pid_file: "{{ cpustat_pid_file }}" }
-    # We need to especially check the values of si and so. If these are non-zero, you’re out of memory.
-    - { command: "vmstat --one-header --wide --unit K --timestamp {{ perf_stats_report_interval_sec }}",
-        remote_log_file: "{{ remote_memstat_log_file }}",
-        pid_file: "{{ memstat_pid_file }}" }
-    - { command: "iostat -dktxyzH -g {{ device_name }} {{ device_fullname }} {{ perf_stats_report_interval_sec }}",
-        remote_log_file: "{{ remote_iostat_log_file }}",
-        pid_file: "{{ iostat_pid_file }}" }
-    - { command: "pidstat -G java -ult {{ perf_stats_report_interval_sec }}",
-        remote_log_file: "{{ remote_pidstat_log_file }}",
-        pid_file: "{{ pidstat_pid_file }}" }
+- include_tasks: start_collect_perfs.yml
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
 
 - set_fact:
     cur_load_data: "{{ load_data }}"
     cur_trace_transactions_block_rq: "{{ trace_transactions_block_rq }}"
     outer_notes_repeat: "{{ notes }}"
-    tracking_values: []
+    tracking_values: {}
     steady_state: False
 
 - include_tasks: do_run.yml
@@ -160,27 +176,13 @@
   loop_control:
     loop_var: cur_round
 
-- name: ({{ notes }}) stop to collect system performance statistics
-  shell: >
-    pkill --signal {{ item.signal }} --pidfile {{ item.pid_file }} ;
-    rm --force {{ item.pid_file }}
-  loop:
-    - { pid_file: "{{ cpustat_pid_file }}", signal: SIGINT }
-    - { pid_file: "{{ memstat_pid_file }}", signal: SIGTERM }
-    - { pid_file: "{{ iostat_pid_file }}", signal: SIGTERM }
-    - { pid_file: "{{ pidstat_pid_file }}", signal: SIGINT }
+- include_tasks: stop_collect_perfs.yml
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- include_tasks: backup_file.yml
-  vars:
-    local_file: "{{ item.local_file }}"
-    remote_file: "{{ item.remote_file }}"
-  loop:
-    - { local_file: "{{ local_cpustat_log_file }}",
-        remote_file: "{{ remote_cpustat_log_file }}" }
-    - { local_file: "{{ local_memstat_log_file }}",
-        remote_file: "{{ remote_memstat_log_file }}" }
-    - { local_file: "{{ local_iostat_log_file }}",
-        remote_file: "{{ remote_iostat_log_file }}" }
-    - { local_file: "{{ local_pidstat_log_file }}",
-        remote_file: "{{ remote_pidstat_log_file }}" }
+- include_tasks: backup_perf_logs.yml
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 ...

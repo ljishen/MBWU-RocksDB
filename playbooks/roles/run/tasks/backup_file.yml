@@ -19,7 +19,7 @@
 - name: ({{ notes }}) clean backup
   shell: |
     if cmp -s {{ copy_res.backup_file }} {{ local_file }}; then
-      rm -f {{ copy_res.backup_file }}
+      rm --force {{ copy_res.backup_file }}
     fi
   delegate_to: localhost
   when: copy_res.backup_file is defined

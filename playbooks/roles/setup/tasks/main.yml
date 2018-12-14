@@ -139,7 +139,7 @@
     dest: "{{ workdir }}"
     keep_newer: no
     remote_src: yes
-    src: http://mirrors.sorengard.com/apache/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz
+    src: http://mirrors.advancedhosters.com/apache/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz
 
 - name: clone YCSB
   git:

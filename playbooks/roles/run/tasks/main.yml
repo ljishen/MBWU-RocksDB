@@ -16,16 +16,10 @@
   loop: "{{ core_workloads }}"
   run_once: yes
 
-- name: ensure the presence of remote dirs
-  become: yes
-  file:
-    owner: "{{ ansible_user }}"
-    path: "{{ item }}"
-    state: directory
-  loop:
-    - "{{ device_mountpoint }}"
-    - "{{ remote_scripts_dir }}"
-    - "{{ remote_pid_files_dir }}"
+- include_tasks: create_dirs.yml
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
 - block:
     - name: get info of command {{ fio_bin }} from the shell
@@ -41,14 +35,20 @@
       when: comm_res.rc != 0
       failed_when: comm_res != 0
 
-    - name: get size of {{ device_fullname }} in bytes
+    - name: get size of devices in bytes
       become: yes
       command: blockdev --getsize64 {{ device_fullname }}
       changed_when: False
+      loop: "{{ device_fullnames }}"
+      loop_control:
+        loop_var: device_fullname
       register: comm_res
 
     - set_fact:
-        device_size: "{{ comm_res.stdout }}"
+        # see Combining hashes/dictionaries
+        #   https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html#combining-hashes-dictionaries
+        device_sizes: "{{ device_sizes | default({}) | combine({ (item.device_fullname | basename) : item.stdout }) }}"
+      loop: "{{ comm_res.results }}"
 
     - name: download the device purge script
       get_url:
@@ -73,7 +73,7 @@
 
 - name: kill the remnant processes for tracing block requests
   become: yes
-  command: pkill -SIGINT --full blktrace.+{{ device_fullname }}
+  command: pkill -SIGINT --full blktrace
   register: comm_res
   changed_when: comm_res.rc == 0
   ignore_errors: yes

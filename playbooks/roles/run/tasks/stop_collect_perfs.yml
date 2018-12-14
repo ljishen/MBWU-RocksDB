@@ -1,0 +1,11 @@
+---
+- name: ({{ notes }}) stop to collect system performance statistics
+  shell: >
+    pkill --signal {{ item.signal }} --pidfile {{ item.pid_file }} ;
+    rm --force {{ item.pid_file }}
+  loop:
+    - { pid_file: "{{ cpustat_pid_file }}", signal: SIGINT }
+    - { pid_file: "{{ memstat_pid_file }}", signal: SIGTERM }
+    - { pid_file: "{{ iostat_pid_file }}", signal: SIGTERM }
+    - { pid_file: "{{ pidstat_pid_file }}", signal: SIGINT }
+...

@@ -1,7 +1,7 @@
 ---
 - name: ({{ notes }}) stop to trace block requests
   become: yes
-  command: pkill -SIGINT --full blktrace.+{{ device_fullname }}
+  command: pkill -SIGINT --full blktrace
   register: comm_res
   changed_when: comm_res.rc == 0
 
@@ -16,8 +16,20 @@
     owner: "{{ ansible_user }}"
     path: "{{ remote_blkstat_log_dir }}"
     remove: no
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- name: ({{ notes }}) parse event streams of {{ device_fullname }} for I/O size analysis
+- name: ({{ notes }}) backup the blkstat archives
+  include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_output_dir }}/{{ remote_blkstat_log_archive | basename }}"
+    remote_file: "{{ remote_blkstat_log_archive }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
+
+- name: ({{ notes }}) parse event streams of devices for I/O size analysis
   command: >
     blkparse
     --act-mask={{ event }}
@@ -26,28 +38,38 @@
     --output={{ remote_blkstat_text_file }}
     --per-program-stats
   vars:
-    event: "{{ item }}"
-  loop: [ 'issue', 'complete' ]
+    event: "{{ item[0] }}"
+    device_name: "{{ item[1] }}"
+  loop: "{{ [ 'issue', 'complete' ] | product(device_names) | list }}"
 
-- include_tasks: backup_file.yml
+- name: ({{ notes }}) backup formatted output of I/O event streams
+  include_tasks: backup_file.yml
   vars:
     local_file: "{{ local_output_dir }}/{{ blkstat_text_filename }}"
     remote_file: "{{ remote_blkstat_text_file }}"
-    event: "{{ item }}"
-  loop: [ 'issue', 'complete' ]
+    event: "{{ item[0] }}"
+    device_name: "{{ item[1] }}"
+  loop: "{{ [ 'issue', 'complete' ] | product(device_names) | list }}"
 
-- name: ({{ notes }}) parse event streams of {{ device_fullname }} for I/O replay
+- name: ({{ notes }}) parse event streams of devices for I/O replay
   command: >
     blkparse
     --input-directory={{ remote_blkstat_log_dir }}
     --input={{ device_name }}
     --output=/dev/null
     --dump-binary={{ remote_blkstat_bin_file }}
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- include_tasks: backup_file.yml
+- name: ({{ notes }}) backup binary output of I/O event streams
+  include_tasks: backup_file.yml
   vars:
     local_file: "{{ local_output_dir }}/{{ blkstat_bin_filename }}"
     remote_file: "{{ remote_blkstat_bin_file }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
 - name: ({{ notes }}) generate I/O size distribution
   shell: >
@@ -55,14 +77,16 @@
     > {{ remote_ioszdist_log_file }} 2>&1
   vars:
     event: complete
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- include_tasks: backup_file.yml
+- name: ({{ notes }}) backup the I/O size distribution logs
+  include_tasks: backup_file.yml
   vars:
-    local_file: "{{ item.local_file }}"
-    remote_file: "{{ item.remote_file }}"
-  loop:
-    - { local_file: "{{ local_output_dir }}/{{ remote_blkstat_log_archive | basename }}",
-        remote_file: "{{ remote_blkstat_log_archive }}" }
-    - { local_file: "{{ local_output_dir }}/{{ ioszdist_log_filename }}",
-        remote_file: "{{ remote_ioszdist_log_file }}" }
+    local_file: "{{ local_output_dir }}/{{ ioszdist_log_filename }}"
+    remote_file: "{{ remote_ioszdist_log_file }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 ...

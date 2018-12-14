@@ -1,0 +1,27 @@
+---
+- name: ({{ notes }}) start to collect system performance statistics
+  # we use stdbuf to turn off the buffering of the output redirection.
+  #   https://linux.die.net/man/1/stdbuf
+  #   https://stackoverflow.com/a/1429973
+  shell: >
+    nohup stdbuf -oL -eL {{ item.command }} < /dev/null > {{ item.remote_log_file }} 2>&1 &
+    echo $! > {{ item.pid_file }}
+  environment:
+    S_TIME_FORMAT: ISO
+  vars:
+    device_name: "{{ device_fullname | basename }}"
+  loop:
+    - { command: "mpstat -P ALL {{ perf_stats_report_interval_in_secs }}",
+        remote_log_file: "{{ remote_cpustat_log_file }}",
+        pid_file: "{{ cpustat_pid_file }}" }
+    # We need to especially check the values of si and so. If these are non-zero, you’re out of memory.
+    - { command: "vmstat --one-header --wide --unit K --timestamp {{ perf_stats_report_interval_in_secs }}",
+        remote_log_file: "{{ remote_memstat_log_file }}",
+        pid_file: "{{ memstat_pid_file }}" }
+    - { command: "iostat -dktxyzH -g {{ device_name }} {{ device_fullname }} {{ perf_stats_report_interval_in_secs }}",
+        remote_log_file: "{{ remote_iostat_log_file }}",
+        pid_file: "{{ iostat_pid_file }}" }
+    - { command: "pidstat -G java -ult {{ perf_stats_report_interval_in_secs }}",
+        remote_log_file: "{{ remote_pidstat_log_file }}",
+        pid_file: "{{ pidstat_pid_file }}" }
+...

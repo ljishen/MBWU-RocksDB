@@ -1,0 +1,16 @@
+---
+- name: ({{ notes }}) read information of device {{ device_fullname }}
+  become: yes
+  parted:
+    device: "{{ device_fullname }}"
+    unit: MiB
+  register: device_info
+
+- name: ({{ notes }}) remove all partitions from device {{ device_fullname }}
+  become: yes
+  parted:
+    device: "{{ device_fullname }}"
+    number: "{{ item.num }}"
+    state: absent
+  loop: "{{ device_info.partitions | flatten(levels=1) }}"
+...

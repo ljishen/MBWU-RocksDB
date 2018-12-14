@@ -9,14 +9,19 @@ fieldcount: 1
 # (DO NOT CHANGE) Use the last x number of values to detect steady state.
 measurement_window_size: 3
 
-perf_stats_report_interval_sec: 3
+perf_stats_report_interval_in_secs: 3
 
-rocksdb_remote_input_options_file: "{{ remote_output_dir }}/{{ rocksdb_options_file | basename }}"
+single_task_wait_duration: "{{ 60 * 60 * 12 }}"
+retry_delay_30_secs: 30
+
+local_output_dir: "{{ inventory_dir }}/analysis/data/ycsb/{{ inventory_hostname }}/{{ device_name }}/output_{{ cur_workload }}"
+remote_data_dir: "{{ workdir }}/data/{{ device_name }}"
+remote_output_dir: "{{ remote_data_dir }}/output_{{ cur_workload }}"
+remote_nohup_output_dir: "{{ remote_data_dir }}/nohup_out"
 
 local_rocksdb_log_file: "{{ local_output_dir }}/LOG_{{ phase }}_round{{ cur_round }}"
 
-local_output_dir: "{{ inventory_dir }}/analysis/data/ycsb/{{ inventory_hostname }}/output_{{ cur_workload }}"
-remote_output_dir: "{{ workdir }}/data/output_{{ cur_workload }}"
+rocksdb_remote_input_options_file: "{{ remote_output_dir }}/{{ rocksdb_options_file | basename }}"
 
 hdparm_id_info_filename: hdparm_id_info
 remote_hdparm_id_info_file: "{{ remote_output_dir }}/{{ hdparm_id_info_filename }}"
@@ -46,7 +51,7 @@ transactions_filename: "transactions_round{{ cur_round }}.dat"
 local_transactions_output_file: "{{ local_output_dir }}/{{ transactions_filename }}"
 remote_transactions_output_file: "{{ remote_output_dir }}/{{ transactions_filename }}"
 
-remote_pid_files_dir: "{{ workdir }}/pid_files"
+remote_pid_files_dir: "{{ remote_data_dir }}/pid_files"
 
 cpustat_pid_file: "{{ remote_pid_files_dir }}/cpustat.pid"
 cpustat_log_filename: "cpustat.log"
@@ -68,6 +73,9 @@ pidstat_log_filename: "pidstat.log"
 local_pidstat_log_file: "{{ local_output_dir }}/{{ pidstat_log_filename }}"
 remote_pidstat_log_file: "{{ remote_output_dir }}/{{ pidstat_log_filename }}"
 
+purge_device_pid_file: "{{ remote_pid_files_dir }}/purge_device.pid"
+wipc_pid_file: "{{ remote_pid_files_dir }}/wipc.pid"
+ycsb_load_pid_file: "{{ remote_pid_files_dir }}/ycsb_load.pid"
 ycsb_transactions_pid_file: "{{ remote_pid_files_dir }}/ycsb_transactions.pid"
 
 io_accounting_filename: "io_accounting_round{{ cur_round }}.log"

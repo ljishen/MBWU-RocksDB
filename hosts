@@ -1,7 +1,7 @@
-# device_name: The name of the device under test (DUT).
-#              This is required for each host.
-#              ALL DATA on the DUT will be ERASED!
+# test_devices: The names of a list of devices under test (DUT).
+#               This is required for each host.
+#               CAUTION: ALL DATA on the DUTs will be ERASED!
 
-# 192.168.140.138   ansible_user=ljishen    device_name=sdb
-# 73.162.248.180    ansible_user=ljishen    device_name=sda   ansible_port=22002
-# 192.168.86.31     ansible_user=rock64     device_name=sda
+# 192.168.140.138   ansible_user=ljishen    test_devices=sda,sdb
+# 73.162.248.180    ansible_user=ljishen    test_devices=sda   ansible_port=22002
+# 192.168.86.31     ansible_user=rock64     test_devices=sda

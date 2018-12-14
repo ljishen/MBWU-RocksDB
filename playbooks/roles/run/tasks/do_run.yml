@@ -17,13 +17,16 @@
         phase: transactions
       when: cur_trace_transactions_block_rq
 
-    - name: ({{ notes }}) get the stats of device {{ device_fullname }} (before)
+    - name: ({{ notes }}) get the stats of devices (before)
       # We don't want to interfere the stats of the block device so just not to
       # write the result directly to file here.
       shell: "{{ device_stats_command }}"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
       register: before_stats_res
 
-    - name: ({{ notes }}) execute the workload in the background
+    - name: ({{ notes }}) execute the workload on devices in the background
       shell: >
         nohup stdbuf -oL -eL
         bin/ycsb run rocksdb -s
@@ -34,31 +37,44 @@
         chdir: "{{ ycsb_dir }}"
       environment:
         PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
 
-    - name: ({{ notes }}) get the PID of the YCSB transactions process
-      shell: >
-        ps -eo user,pid,ppid,c,stime,tname,time,args |
-        grep -E [j]ava.+{{ remote_workload_file }} |
-        awk '{print $2}'
-      register: comm_ycsb_transactions_pid
-      until: comm_ycsb_transactions_pid.stdout != ""
-      retries: 120
-      delay: 1
-      changed_when: False
+    - include_tasks: save_ycsb_pids.yml
+      vars:
+        ycsb_pid_file: "{{ ycsb_transactions_pid_file }}"
 
-    - name: ({{ notes }}) backup YCSB transactions PID
-      shell: echo {{ comm_ycsb_transactions_pid.stdout }} > {{ ycsb_transactions_pid_file }}
-
-    - name: ({{ notes }}) record IO accounting for the YCSB transactions process until terminated
+    - name: ({{ notes }}) record IO accounting information for the YCSB transactions processes
       become: yes
-      shell: >
+      command: >
         {{ remote_scripts_dir }}/{{ io_accounting_script_filename }}
-        {{ comm_ycsb_transactions_pid.stdout }}
-        {{ remote_io_accounting_file }} {{ perf_stats_report_interval_sec }}
-      ignore_errors: True
+        {{ ycsb_transactions_pid_file }}
+        {{ remote_io_accounting_file }} {{ perf_stats_report_interval_in_secs }}
+      async: "{{ single_task_wait_duration }}"
+      poll: 0
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
+      register: async_results
 
-    - name: ({{ notes }}) get the stats of device {{ device_fullname }} (after)
+    - name: ({{ notes }}) check IO accounting status
+      become: yes
+      async_status:
+        jid: "{{ async_result_item.ansible_job_id }}"
+      loop: "{{ async_results.results }}"
+      loop_control:
+        loop_var: "async_result_item"
+      register: async_poll_results
+      until: async_poll_results.finished
+      retries: "{{ (single_task_wait_duration | int) // (retry_delay_30_secs | int) }}"
+      delay: "{{ retry_delay_30_secs }}"
+
+    - name: ({{ notes }}) get the stats of devices (after)
       shell: "sync; {{ device_stats_command }}"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
       register: after_stats_res
 
     - include_tasks: stop_blkstat.yml
@@ -70,69 +86,107 @@
         cur_trace_transactions_block_rq: False
       when: trace_transactions_block_rq_once
 
-    - name: ({{ notes }}) save device stats to files
-      copy:
-        backup: no
-        content: "{{ item.register.stdout }}"
-        dest: "{{ remote_device_stats_file }}"
-        force: yes
-        owner: "{{ ansible_user }}"
+    - name: ({{ notes }}) clean YCSB transactions PID files
+      command: rm --force {{ ycsb_transactions_pid_file }}
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
+
+    - name: ({{ notes }}) save before stats of devices to files
+      include_tasks: save_dev_stats.yml
       vars:
-        flag: "{{ item.flag }}"
-      loop:
-        - { register: "{{ before_stats_res }}", flag: 'b' }
-        - { register: "{{ after_stats_res }}", flag: 'a' }
+        flag: b
+        dev_stats_res: "{{ before_stats_res }}"
+
+    - name: ({{ notes }}) save after stats of devices to files
+      include_tasks: save_dev_stats.yml
+      vars:
+        flag: a
+        dev_stats_res: "{{ after_stats_res }}"
 
     - include_tasks: backup_file.yml
       vars:
-        flag: "{{ item }}"
+        flag: "{{ item[0] }}"
+        device_name: "{{ item[1] }}"
         local_file: "{{ local_device_stats_file }}"
         remote_file: "{{ remote_device_stats_file }}"
-      loop: [ 'b', 'a' ]
+      loop: "{{ [ 'b', 'a' ] | product(device_names) | list }}"
 
-    - include_tasks: backup_file.yml
+    - name: ({{ notes }}) backup YCSB transactions outputs
+      include_tasks: backup_file.yml
       vars:
-        local_file: "{{ item.local_file }}"
-        remote_file: "{{ item.remote_file }}"
-      loop:
-        - { local_file: "{{ local_transactions_output_file }}",
-            remote_file: "{{ remote_transactions_output_file }}" }
-        - { local_file: "{{ local_io_accounting_file }}",
-            remote_file: "{{ remote_io_accounting_file }}" }
+        local_file: "{{ local_transactions_output_file }}"
+        remote_file: "{{ remote_transactions_output_file }}"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
 
-    - include_tasks: backup_file.yml
+    - name: ({{ notes }}) backup I/O accounting information logs
+      include_tasks: backup_file.yml
+      vars:
+        local_file: "{{ local_io_accounting_file }}"
+        remote_file: "{{ remote_io_accounting_file }}"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
+
+    - name: ({{ notes }}) backup RocksDB log files
+      include_tasks: backup_file.yml
       vars:
         local_file: "{{ local_rocksdb_log_file }}"
         remote_file: "{{ rocksdb_data_dir }}/LOG"
         phase: transactions
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
 
-    - name: ({{ notes }}) get the latest RocksDB OPTIONS file
+    - name: ({{ notes }}) identify the latest RocksDB OPTIONS files
       shell: find {{ rocksdb_data_dir }} -name "OPTIONS-*" -type f | sort | tail -1
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
       register: comm_res
 
-    - include_tasks: backup_file.yml
+    - name: ({{ notes }}) backup RocksDB OPTIONS files
+      include_tasks: backup_file.yml
       vars:
+        device_name: "{{ item.device_name }}"
         local_file: "{{ local_output_dir }}/OPTIONS"
-        remote_file: "{{ comm_res.stdout }}"
+        remote_file: "{{ item.stdout }}"
+      loop: "{{ comm_res.results }}"
 
-    - name: ({{ notes }}) extract the throughput value from output
+    - name: ({{ notes }}) extract the throughput value from YCSB transactions outputs
       command: >
         grep -oP '\[OVERALL\],\s+Throughput\(ops/sec\),\s+\K[\d.]+' {{ remote_transactions_output_file }}
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
       register: comm_res
 
-    - name: ({{ notes }}) save throughput for steady state detection
+    - name: ({{ notes }}) save throughputs for steady state detection
       set_fact:
-        tracking_values: "{{ tracking_values + [ comm_res.stdout | float ] }}"
+        tracking_values: >
+          {{ tracking_values | combine({ item.device_name : (tracking_values[item.device_name] | default([])) + [ item.stdout | float ] }) }}
+      loop: "{{ comm_res.results }}"
 
-    - name: ({{ notes }}) check steady state
+    - name: ({{ notes }}) get steady state for each device
       script: >
-        {{ role_path }}/files/verify_ss.py '{{ tracking_values }}' {{ measurement_window_size }}
+        {{ role_path }}/files/verify_ss.py '{{ tracking_values[device_name] }}' {{ measurement_window_size }}
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
       register: script_res
       ignore_errors: yes
 
+    - name: ({{ notes }}) verify the overall stead state
+      set_fact:
+        verify_res: "{{ verify_res | default(True) and item.rc == 0 }}"
+      loop: "{{ script_res.results }}"
+
     - name: ({{ notes }}) update loop condition
       set_fact:
-        steady_state: "{{ True if script_res.rc == 0 else False }}"
+        steady_state: "{{ verify_res }}"
+        verify_res: True
 
   when: not steady_state
 ...

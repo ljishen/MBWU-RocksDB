@@ -1,88 +1,161 @@
 ---
-- name: ({{ notes }}) unmount filesystem for device {{ device_fullname }} if necessary
+- name: ({{ notes }}) unmount filesystem for devices if necessary
   become: yes
   shell: |
     if findmnt --source {{ device_fullname }} > /dev/null 2>&1; then
       umount {{ device_fullname }}
     fi
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
 
-- name: ({{ notes }}) remove all partitions from device {{ device_fullname }}
-  become: yes
-  parted:
-    device: "{{ device_fullname }}"
-    number: "{{ ansible_devices[device_name]['partitions'] | length }}"
-    state: absent
-  when: ansible_devices[device_name]['partitions'] | length > 0
+- include_tasks: remove_partitions.yml
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
 
-- name: ({{ notes }}) purge device {{ device_fullname }}
+- name: ({{ notes }}) purge devices
   become: yes
-  command: >
-    {{ remote_scripts_dir }}/{{ device_purge_script_filename }} {{ device_fullname }}
+  shell: >
+    nohup {{ remote_scripts_dir }}/{{ device_purge_script_filename }} {{ device_fullname }}
+    < /dev/null > {{ remote_nohup_output_dir }}/purge_dev_nohup.out 2>&1 &
+    echo $! > {{ purge_device_pid_file }}
+  vars:
+    device_name: "{{ device_fullname | basename }}"
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
 
-- name: ({{ notes }}) run workload independent pre-conditioning on {{ device_fullname }}
+- name: ({{ notes }}) check device purge status
+  include_tasks: wait_async_task.yml
+  vars:
+    pid_file: "{{ purge_device_pid_file }}"
+    delay: "{{ retry_delay_30_secs }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
+
+- name: ({{ notes }}) run workload independent pre-conditioning (wipc) on devices
   become: yes
-  command: >
-    {{ fio_bin }} {{ remote_wipc_job_file }}
+  shell: >
+    nohup {{ fio_bin }} {{ remote_wipc_job_file }}
     --output-format=json+
     --output {{ remote_wipc_output_file }}
+    < /dev/null > {{ remote_nohup_output_dir }}/wipc_nohup.out 2>&1 &
+    echo $! > {{ wipc_pid_file }}
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- include_tasks: backup_file.yml
+- name: ({{ notes }}) check wipc status
+  include_tasks: wait_async_task.yml
+  vars:
+    pid_file: "{{ wipc_pid_file }}"
+    delay: "{{ retry_delay_30_secs }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
+
+- name: ({{ notes }}) backup wipc outputs
+  include_tasks: backup_file.yml
   vars:
     local_file: "{{ local_wipc_output_file }}"
     remote_file: "{{ remote_wipc_output_file }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- name: ({{ notes }}) create xfs filesystem for device {{ device_fullname }}
+- name: ({{ notes }}) create xfs filesystem for devices
   become: yes
   filesystem:
     dev: "{{ device_fullname }}"
     force: yes
     fstype: xfs
     opts: -K
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
 
-- name: ({{ notes }}) mount device {{ device_fullname }} to {{ device_mountpoint }}
+- name: ({{ notes }}) mount devices to the related mountpoints
   become: yes
   command: mount -o nodiscard {{ device_fullname }} {{ device_mountpoint }}
   args:
     warn: no
+  vars:
+    device_name: "{{ device_fullname | basename }}"
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
 
-- name: ({{ notes }}) ensure the presence of RocksDB data dir {{ rocksdb_data_dir }}
+- name: ({{ notes }}) ensure the presence of RocksDB data dirs
   become: yes
   file:
     owner: "{{ ansible_user }}"
     path: "{{ rocksdb_data_dir }}"
     state: directory
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
 - include_tasks: free_cache.yml
 
 - include_tasks: start_blkstat.yml
   when: trace_load_block_rq
 
-- name: ({{ notes }}) load the data
+- name: ({{ notes }}) load the data to devices in the background
   shell: >
+    nohup stdbuf -oL -eL
     bin/ycsb load rocksdb -s
     -P {{ remote_workload_file }}
     -target {{ target_ops_per_sec_on_load }}
     -p rocksdb.dir={{ rocksdb_data_dir }}
     -p options.file={{ rocksdb_remote_input_options_file }}
-    > {{ remote_load_output_file }} 2>&1
+    < /dev/null > {{ remote_load_output_file }} 2>&1 &
   args:
     chdir: "{{ ycsb_dir }}"
   environment:
     PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
+
+- include_tasks: save_ycsb_pids.yml
+  vars:
+    ycsb_pid_file: "{{ ycsb_load_pid_file }}"
+
+- name: ({{ notes }}) check YCSB load status
+  include_tasks: wait_async_task.yml
+  vars:
+    pid_file: "{{ ycsb_load_pid_file }}"
+    delay: "{{ retry_delay_30_secs }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
 - include_tasks: stop_blkstat.yml
   when: trace_load_block_rq
 
 - name: ({{ notes }}) print the size of database dir after loaded
   command: du -BK {{ rocksdb_data_dir }}
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- include_tasks: backup_file.yml
+- name: backup YCSB load outputs
+  include_tasks: backup_file.yml
   vars:
     local_file: "{{ local_load_output_file }}"
     remote_file: "{{ remote_load_output_file }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 
-- include_tasks: backup_file.yml
+- name: backup RocksDB log files
+  include_tasks: backup_file.yml
   vars:
     local_file: "{{ local_rocksdb_log_file }}"
     remote_file: "{{ rocksdb_data_dir }}/LOG"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
 ...

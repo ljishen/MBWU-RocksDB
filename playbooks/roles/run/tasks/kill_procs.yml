@@ -1,0 +1,14 @@
+---
+- name: ({{ notes }}) kill the remnant processes from previous run
+  become: yes
+  shell: pkill -SIGTERM --pidfile {{ item }} ; rm --force {{ item }}
+  loop:
+    - "{{ cpustat_pid_file }}"
+    - "{{ memstat_pid_file }}"
+    - "{{ iostat_pid_file }}"
+    - "{{ pidstat_pid_file }}"
+    - "{{ purge_device_pid_file }}"
+    - "{{ wipc_pid_file }}"
+    - "{{ ycsb_load_pid_file }}"
+    - "{{ ycsb_transactions_pid_file }}"
+...

@@ -5,9 +5,16 @@
     core_workloads: [ 'workloada', 'workloadb', 'workloadc', 'workloadd', 'workloade', 'workloadf' ]
     ycsb_dir: "{{ workdir }}/YCSB"
     maven_dir: "{{ workdir }}/apache-maven-{{ maven_version }}"
-    device_fullname: /dev/{{ device_name }}
+    device_fullnames: []
   pre_tasks:
-    - name: retrieve the stat of block device {{ device_fullname }}
+    - name: collect the name of all test devices
+      set_fact:
+        device_names: "{{ test_devices.split(',') }}"
+    - name: get the fullnames of test devices
+      set_fact:
+        device_fullnames: "{{ device_fullnames + [ '/dev/' ~ item ] }}"
+      loop: "{{ device_names }}"
+    - name: retrieve the stat of block devices
       stat:
         follow: no
         get_attributes: no
@@ -15,13 +22,17 @@
         get_md5: no
         get_mime: no
         path: "{{ device_fullname }}"
+      loop: "{{ device_fullnames }}"
+      loop_control:
+        loop_var: device_fullname
       register: stat_res
-    - name: verify the existence of block device {{ device_fullname }}
+    - name: verify the existence of block devices
       debug:
         msg: >
-          Please double check the existence of block device {{ device_fullname }}
-      when: stat_res.stat.isblk is not defined or not stat_res.stat.isblk
-      failed_when: stat_res.stat.isblk is not defined or not stat_res.stat.isblk
+          Please double check the existence of block device {{ item.item }}
+      when: item.stat.isblk is not defined or not item.stat.isblk
+      failed_when: item.stat.isblk is not defined or not item.stat.isblk
+      loop: "{{ stat_res.results }}"
 
     - name: collect the run workloads
       set_fact:
