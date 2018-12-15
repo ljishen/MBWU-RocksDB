@@ -16,6 +16,7 @@
 
 - name: check if JDK installed
   command: javac -version
+  ignore_errors: yes
   register: comm_res
   changed_when: False
 
