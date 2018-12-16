@@ -152,6 +152,9 @@
     repo: https://github.com/ljishen/YCSB.git
     update: yes
     version: "{{ ycsb_version }}"
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
   register: git_res
 
 - name: update RocksDB version in YCSB
@@ -162,6 +165,18 @@
     path: "{{ ycsb_dir }}/pom.xml"
     regexp: '^(\s+)<rocksdb\.version>[\d.]+</rocksdb\.version>$'
     state: present
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
+
+- name: build RocksDB YCSB binding if necessary (check 1)
+  command: "{{ ycsb_rocksdb_building_command }}"
+  args:
+    chdir: "{{ ycsb_dir }}"
+  vars:
+    device_name: "{{ item.device_name }}"
+  when: item.after != item.before
+  loop: "{{ git_res.results }}"
 
 - name: check if ycsb-rocksdb-binding exists
   find:
@@ -169,14 +184,19 @@
     paths: "{{ ycsb_dir }}/rocksdb/target"
     patterns: 'ycsb-rocksdb-binding-*.tar.gz'
     use_regex: no
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
   register: find_res
 
-- name: build RocksDB YCSB binding
-  command: >
-    {{ maven_dir }}/bin/mvn -pl com.yahoo.ycsb:rocksdb-binding -am clean package
+- name: build RocksDB YCSB binding if necessary (check 2)
+  command: "{{ ycsb_rocksdb_building_command }}"
   args:
     chdir: "{{ ycsb_dir }}"
-  when: git_res.after != git_res.before or find_res.matched == 0
+  vars:
+    device_name: "{{ item.device_name }}"
+  when: item.matched == 0
+  loop: "{{ find_res.results }}"
 
 - name: config scaling governor for online CPUs
   become: yes

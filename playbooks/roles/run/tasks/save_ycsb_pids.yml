@@ -10,7 +10,7 @@
     loop_var: device_name
   register: comm_ycsb_pid
   until: comm_ycsb_pid.stdout != ""
-  retries: 120
+  retries: "{{ 60 * 3 }}"
   delay: 1
   changed_when: False
 

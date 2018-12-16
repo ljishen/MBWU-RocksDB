@@ -3,7 +3,8 @@
   any_errors_fatal: true
   vars:
     core_workloads: [ 'workloada', 'workloadb', 'workloadc', 'workloadd', 'workloade', 'workloadf' ]
-    ycsb_dir: "{{ workdir }}/YCSB"
+    remote_runtimes_dir: "{{ workdir }}/runtimes/{{ device_name }}"
+    ycsb_dir: "{{ remote_runtimes_dir }}/YCSB"
     maven_dir: "{{ workdir }}/apache-maven-{{ maven_version }}"
     device_fullnames: []
   pre_tasks:

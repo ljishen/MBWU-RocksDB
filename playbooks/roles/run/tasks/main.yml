@@ -13,6 +13,8 @@
     fail_on_missing: yes
     flat: yes
     src: "{{ ycsb_dir }}/workloads/{{ item }}"
+  vars:
+    device_name: "{{ device_names[0] }}"
   loop: "{{ core_workloads }}"
   run_once: yes
 

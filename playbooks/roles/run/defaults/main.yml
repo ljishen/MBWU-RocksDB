@@ -51,7 +51,7 @@ transactions_filename: "transactions_round{{ cur_round }}.dat"
 local_transactions_output_file: "{{ local_output_dir }}/{{ transactions_filename }}"
 remote_transactions_output_file: "{{ remote_output_dir }}/{{ transactions_filename }}"
 
-remote_pid_files_dir: "{{ remote_data_dir }}/pid_files"
+remote_pid_files_dir: "{{ remote_runtimes_dir }}/pid_files"
 
 cpustat_pid_file: "{{ remote_pid_files_dir }}/cpustat.pid"
 cpustat_log_filename: "cpustat.log"
