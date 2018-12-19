@@ -1,0 +1,118 @@
+#!/usr/bin/expect -f
+
+set force_conservative 1  ;# set to 1 to force conservative mode even if
+                          ;# script wasn't run conservatively originally
+if {$force_conservative} {
+    set send_slow {1 .1}
+    proc send {ignore arg} {
+        sleep .1
+        exp_send -s -- $arg
+    }
+}
+
+if {[llength $argv] < 1 || [llength $argv] > 3} {
+    puts "invalid number of parameters"
+    puts "
+A script used to poll the phase load (Amps) of an APC Switched Rack PDU
+via ssh connection.
+
+Usage: $argv0 \[user@\]hostname \[log_file_path\] \[poll_interval_in_secs\]
+
+log_file_path:
+    Optional. This is the file the phase load values will be logged to.
+    The default file is phase_load.log in the current dir.
+
+poll_interval_in_secs:
+    Optional. The interval to poll the phase load value (and append to the log
+    file). As a rule of thumb, this value should NOT be less than 3 seconds.
+    Therefore we set the default value to 3 seconds."
+
+    exit 1
+}
+
+set timeout -1
+match_max 100000
+
+set user_host [lindex $argv 0]
+set log_file_path {phase_load.log}
+set poll_interval_in_secs 3
+
+if {[llength $argv] > 1} {
+    set log_file_path [lindex $argv 1]
+}
+if {![string match "*/*" $log_file_path]} {
+    set script_path [ file dirname [ file normalize [ info script ] ] ]
+    set log_file_path "$script_path/$log_file_path"
+}
+
+if {[llength $argv] > 2} {
+    set poll_interval_in_secs [lindex $argv 2]
+}
+
+set prompt "> *"
+
+spawn ssh -oKexAlgorithms=+diffie-hellman-group1-sha1 -oStrictHostKeyChecking=no $user_host
+# spawn ssh -oStrictHostKeyChecking=no $user_host
+
+log_user 0
+
+expect {
+    "*assword: *" {
+        stty -echo
+        puts -nonewline "$expect_out(buffer)"
+        expect_user -re "(.*)\n"
+        puts ""
+        send -- "$expect_out(1,string)\r"
+        stty echo
+        exp_continue
+    }
+    closed {
+        puts "\ninvalid password or account"
+        exit 2
+    }
+    timeout {
+        puts "\nconnection to $user_host timed out"
+        exit 3
+    }
+    eof {
+        puts "\nconnection to host failed: $expect_out(buffer)"
+        exit 3
+    }
+    $prompt
+}
+
+send -- "1\r"
+expect $prompt
+send -- "1\r"
+
+proc exit_session {} {
+    global prompt
+
+    send -- ""
+    expect $prompt
+    send -- ""
+    expect $prompt
+    send -- "4\r"
+    expect eof
+
+    log_user 1
+    puts "\nssh session has properly existed."
+}
+
+if {![exp_debug]} {trap exit_session {SIGINT SIGTERM}}
+log_file $log_file_path
+
+send_user "Start polling the phase load (Amps) of PDU on $user_host ... Hit Ctrl-C to end.\n"
+send_user "logging to file $log_file_path every $poll_interval_in_secs seconds ...\n\n"
+
+expect {
+    -re "Phase Load : *(\[0-9]*\\.\[0-9]*)\r" {
+        send_user "\[[exec date --iso-8601=seconds]\] $expect_out(1,string)\n"
+        sleep $poll_interval_in_secs
+        if {[catch {send -- "\r"}]} {
+            puts "polling has stopped."
+            exit
+        }
+        exp_continue
+    }
+}
