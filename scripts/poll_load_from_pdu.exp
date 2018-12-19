@@ -24,8 +24,8 @@ log_file_path:
 
 poll_interval_in_secs:
     Optional. The interval to poll the phase load value (and append to the log
-    file). As a rule of thumb, this value should NOT be less than 3 seconds.
-    Therefore we set the default value to 3 seconds."
+    file). As a rule of thumb, this value should NOT be less than 5 seconds.
+    Therefore we set the default value to 5 seconds."
 
     exit 1
 }
@@ -35,7 +35,7 @@ match_max 100000
 
 set user_host [lindex $argv 0]
 set log_file_path {phase_load.log}
-set poll_interval_in_secs 3
+set poll_interval_in_secs 5
 
 if {[llength $argv] > 1} {
     set log_file_path [lindex $argv 1]
