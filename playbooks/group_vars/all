@@ -67,7 +67,7 @@ load_data: yes
 
 # Whether to trace the block requests during the load phase.
 # Note that no tracing will happen when data loading is skipped.
-trace_load_block_rq: yes
+trace_load_block_rq: no
 
 # Whether to trace the block requests during the transactions phase to get
 # information such as I/O size distribution.
@@ -75,7 +75,7 @@ trace_load_block_rq: yes
 # regarding the value of option 'trace_transactions_block_rq_once'.
 # Note that the block request tracer may bring overhead to the performance
 # of YCSB throughput.
-trace_transactions_block_rq: yes
+trace_transactions_block_rq: no
 
 # Trace the block requests only in the first round (yes), or in every
 # round (no).
