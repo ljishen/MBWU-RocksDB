@@ -13,13 +13,13 @@ if {$force_conservative} {
 if {[llength $argv] < 1 || [llength $argv] > 3} {
     puts "invalid number of parameters"
     puts "
-A script used to poll the phase load (Amps) of an APC Switched Rack PDU
+A script used to poll the phase load (Amps) from an APC Switched Rack PDU
 via ssh connection.
 
 Usage: $argv0 \[user@\]hostname \[log_file_path\] \[poll_interval_in_secs\]
 
 log_file_path:
-    Optional. This is the file the phase load values will be logged to.
+    Optional. This is the file that the phase load values will be appended to.
     The default file is phase_load.log in the current dir.
 
 poll_interval_in_secs:
@@ -101,9 +101,9 @@ proc exit_session {} {
 
 if {![exp_debug]} {trap exit_session {SIGINT SIGTERM}}
 log_file $log_file_path
+puts "log_file_path is $log_file_path\n"
 
-send_user "Start polling the phase load (Amps) of PDU on $user_host ... Hit Ctrl-C to end.\n"
-send_user "logging to file $log_file_path every $poll_interval_in_secs seconds ...\n\n"
+send_user "Start polling the phase load (Amps) from PDU on $user_host every $poll_interval_in_secs seconds ... Hit Ctrl-C to end.\n\n"
 
 expect {
     -re "Phase Load : *(\[0-9]*\\.\[0-9]*)\r" {
