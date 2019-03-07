@@ -3,9 +3,10 @@
   any_errors_fatal: true
   vars:
     core_workloads: [ 'workloada', 'workloadb', 'workloadc', 'workloadd', 'workloade', 'workloadf' ]
-    remote_runtimes_dir: "{{ workdir }}/runtimes/{{ device_name }}"
-    ycsb_dir: "{{ remote_runtimes_dir }}/YCSB"
-    maven_dir: "{{ workdir }}/apache-maven-{{ maven_version }}"
+    runtimes_dir: "{{ workdir }}/runtimes"
+    ycsb_dir: "{{ runtimes_dir }}/{{ device_name }}/YCSB"
+    maven_dir: "{{ runtimes_dir }}/apache-maven-{{ maven_version }}"
+    rocksdbjni_rmi_exe: "{{ runtimes_dir }}/rocksdbjni-rmi-{{ rocksdbjni_rmi_version }}-jar-with-dependencies.jar"
     device_fullnames: []
   pre_tasks:
     - name: collect the name of all test devices
@@ -35,17 +36,17 @@
       failed_when: item.stat.isblk is not defined or not item.stat.isblk
       loop: "{{ stat_res.results }}"
 
-    - name: collect the run workloads
+    - name: collect run workloads
       set_fact:
         run_workloads: "{{ ycsb_run_workloads.split(',') }}"
     - name: retrieve the stats of user-defined workload parameter files
-      local_action:
-        module: stat
+      stat:
         follow: yes
         get_attributes: no
         path: "{{ item }}"
       when: item not in core_workloads
       loop: "{{ run_workloads }}"
+      delegate_to: localhost
       register: stat_res
     - name: verify the paths of user-defined workload parameter files
       debug:
@@ -57,7 +58,7 @@
 
   roles:
     - setup
-    - role: run
-      vars:
-        local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
+    # - role: run
+    #   vars:
+    #     local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
 ...

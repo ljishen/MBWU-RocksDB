@@ -1,13 +1,13 @@
 ---
 - name: ({{ notes }}) backup local file
-  local_action:
-    module: copy
+  copy:
     backup: yes
     content: ""
     dest: "{{ local_file }}"
     force: yes
     owner: "{{ lookup('env', 'USER') }}"
   register: copy_res
+  delegate_to: localhost
 
 - name: ({{ notes }}) fetch remote file
   fetch:
