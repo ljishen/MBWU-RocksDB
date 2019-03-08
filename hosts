@@ -10,5 +10,5 @@
 # Examples:
 
 # 192.168.140.138   ansible_user=ljishen    test_devices=sda,sdb    rmi_ports=1099,1100
-# 73.162.248.180    ansible_user=ljishen    test_devices=sda    rmi_ports=1099      ansible_port=22002
-# 192.168.86.31     ansible_user=rock64     test_devices=sda    rmi_ports=1099
+# 73.162.248.180    ansible_user=ljishen    test_devices=sda    rmi_ports=1099,     ansible_port=22002
+# 192.168.86.31     ansible_user=rock64     test_devices=sda    rmi_ports=1099,
