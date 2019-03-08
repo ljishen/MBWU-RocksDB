@@ -1,5 +1,10 @@
 ---
+local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
+
+fio_bin: "{{ fio_dir }}/fio"
+
 device_mountpoint: /mnt/{{ device_name }}
+rocksdb_data_dir: "{{ device_mountpoint }}/{{ rocksdb_data_dirname }}"
 
 # Since the YCSB RocksDB binding just combines all the fields into a single
 # byte array as the value. Reducing the field counts helps to free up more CPU
@@ -27,9 +32,8 @@ hdparm_id_info_filename: hdparm_id_info
 remote_hdparm_id_info_file: "{{ remote_output_dir }}/{{ hdparm_id_info_filename }}"
 local_hdparm_id_info_file: "{{ local_output_dir }}/{{ hdparm_id_info_filename }}"
 
-remote_scripts_dir: "{{ workdir }}/scripts"
+remote_scripts_dir: "{{ runtimes_dir }}/scripts"
 device_purge_script_filename: blkerasediscard.sh
-io_size_dist_script_filename: ioszdist.sh
 io_accounting_script_filename: io_accounting.sh
 
 wipc_job_filename: wipc.fio
@@ -40,18 +44,16 @@ wipc_output_filename: wipc_round{{ cur_round }}.json
 local_wipc_output_file: "{{ local_output_dir }}/{{ wipc_output_filename }}"
 remote_wipc_output_file: "{{ remote_output_dir }}/{{ wipc_output_filename }}"
 
-local_workload_file: "{{ local_output_dir }}/{{ cur_workload }}"
-remote_workload_file: "{{ remote_output_dir }}/{{ cur_workload }}"
+ycsb_workload_file: "{{ local_output_dir }}/{{ cur_workload }}"
 
-load_filename: "load_round{{ cur_round }}.dat"
-local_load_output_file: "{{ local_output_dir }}/{{ load_filename }}"
-remote_load_output_file: "{{ remote_output_dir }}/{{ load_filename }}"
+ycsb_load_filename: "load_round{{ cur_round }}.dat"
+ycsb_load_output_file: "{{ local_output_dir }}/{{ ycsb_load_filename }}"
 
-transactions_filename: "transactions_round{{ cur_round }}.dat"
-local_transactions_output_file: "{{ local_output_dir }}/{{ transactions_filename }}"
-remote_transactions_output_file: "{{ remote_output_dir }}/{{ transactions_filename }}"
+ycsb_transactions_filename: "transactions_round{{ cur_round }}.dat"
+ycsb_transactions_output_file: "{{ local_output_dir }}/{{ ycsb_transactions_filename }}"
 
-remote_pid_files_dir: "{{ remote_runtimes_dir }}/pid_files"
+remote_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ device_name }}"
+local_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ inventory_hostname }}/{{ device_name }}"
 
 cpustat_pid_file: "{{ remote_pid_files_dir }}/cpustat.pid"
 cpustat_log_filename: "cpustat.log"
@@ -75,23 +77,10 @@ remote_pidstat_log_file: "{{ remote_output_dir }}/{{ pidstat_log_filename }}"
 
 purge_device_pid_file: "{{ remote_pid_files_dir }}/purge_device.pid"
 wipc_pid_file: "{{ remote_pid_files_dir }}/wipc.pid"
-ycsb_load_pid_file: "{{ remote_pid_files_dir }}/ycsb_load.pid"
-ycsb_transactions_pid_file: "{{ remote_pid_files_dir }}/ycsb_transactions.pid"
+rocksdb_pid_file: "{{ remote_pid_files_dir }}/rocksdb.pid"
+ycsb_load_pid_file: "{{ local_pid_files_dir }}/ycsb_load.pid"
+ycsb_transactions_pid_file: "{{ local_pid_files_dir }}/ycsb_transactions.pid"
 
 io_accounting_filename: "io_accounting_round{{ cur_round }}.log"
 local_io_accounting_file: "{{ local_output_dir }}/{{ io_accounting_filename }}"
 remote_io_accounting_file: "{{ remote_output_dir }}/{{ io_accounting_filename }}"
-
-blkstat_log_dirname: "blkstat_{{ phase }}_round{{ cur_round }}"
-remote_blkstat_log_dir: "{{ remote_output_dir }}/{{ blkstat_log_dirname }}"
-# See parameter format in module archive for all the available formats
-#   https://docs.ansible.com/ansible/latest/modules/archive_module.html
-blkstat_archive_format: gz
-remote_blkstat_log_archive: "{{ remote_blkstat_log_dir }}.{{ blkstat_archive_format }}"
-blkstat_text_filename: "blkstat_{{ phase }}_round{{ cur_round }}_{{ event }}.log"
-remote_blkstat_text_file: "{{ remote_output_dir }}/{{ blkstat_text_filename }}"
-blkstat_bin_filename: "blkstat_{{ phase }}_round{{ cur_round }}.bin"
-remote_blkstat_bin_file: "{{ remote_output_dir }}/{{ blkstat_bin_filename }}"
-
-ioszdist_log_filename: "ioszdist_{{ phase }}_round{{ cur_round }}.log"
-remote_ioszdist_log_file: "{{ remote_output_dir }}/{{ ioszdist_log_filename }}"

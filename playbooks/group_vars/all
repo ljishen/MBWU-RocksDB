@@ -4,14 +4,10 @@ ansible_ssh_private_key_file: /home/{{ lookup('env', 'USER') }}/keys/id_rsa
 
 maven_version: 3.5.4
 rocksdbjni_rmi_version: 0.0.0.2
+fio_version: 3.8
 
 workdir: /tmp/ycsb-rocksdb
 rocksdb_data_dirname: ycsb-rocksdb-data
-
-# Path of the fio program. By default it uses the version of whatever the system
-# package management provided.
-# You can provide a path to your fio build.
-fio_bin: fio
 
 # This variable accepts the name of YCSB core workloads and user-defined workloads.
 # You can provide your own workload parameter files
@@ -21,7 +17,7 @@ ycsb_run_workloads: "{{ playbook_dir }}/roles/run/templates/myworkloada"
 
 # Target number of operations per second for throttling the data insertion
 # during the loading phase to help to build a steady LSM tree (by allowing
-# more time for compaction). Setting to value of 0 to disable the throttling.
+# more time for compaction). Setting to the value of 0 can disable the throttling.
 target_ops_per_sec_on_load: 3500
 
 # The default maximum number of iteration to evaluate the steady state for
@@ -59,20 +55,4 @@ load_data_once: no
 # Whether to run the YCSB loading phase. If set to 'no', the loading phase will
 # be toally skipped without regarding the value of option 'load_data_once'.
 load_data: yes
-
-# Whether to trace the block requests during the load phase.
-# Note that no tracing will happen when data loading is skipped.
-trace_load_block_rq: no
-
-# Whether to trace the block requests during the transactions phase to get
-# information such as I/O size distribution.
-# Setting this option to 'no' will disable tracing the block requests without
-# regarding the value of option 'trace_transactions_block_rq_once'.
-# Note that the block request tracer may bring overhead to the performance
-# of YCSB throughput.
-trace_transactions_block_rq: no
-
-# Trace the block requests only in the first round (yes), or in every
-# round (no).
-trace_transactions_block_rq_once: no
 ...

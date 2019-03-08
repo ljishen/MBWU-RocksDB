@@ -1,7 +1,14 @@
-# test_devices: The names of a list of devices under test (DUT).
+# test_devices: The names of devices under test (DUT) on the host machine.
 #               This is required for each host.
 #               CAUTION: ALL DATA on the DUTs will be ERASED!
+# rmi_ports:    The system available ports on the host (the device machine).
+#               These ports are used to run RocksDB RIM servers.
+#               Each RocksDB RMI server is only responsible for one device,
+#               so the number of ports should be the same as the number of DUTs.
+#               See https://github.com/ljishen/YCSB/tree/remote-rocksdb/rocksdb
 
-# 192.168.140.138   ansible_user=ljishen    test_devices=sda,sdb
-# 73.162.248.180    ansible_user=ljishen    test_devices=sda   ansible_port=22002
-# 192.168.86.31     ansible_user=rock64     test_devices=sda
+# Examples:
+
+# 192.168.140.138   ansible_user=ljishen    test_devices=sda,sdb    rmi_ports=1099,1100
+# 73.162.248.180    ansible_user=ljishen    test_devices=sda    rmi_ports=1099      ansible_port=22002
+# 192.168.86.31     ansible_user=rock64     test_devices=sda    rmi_ports=1099

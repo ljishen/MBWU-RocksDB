@@ -1,5 +1,6 @@
 ---
-- copy:
+- name: save stats of devices to files
+  copy:
     backup: no
     content: "{{ item.stdout }}"
     dest: "{{ remote_device_stats_file }}"

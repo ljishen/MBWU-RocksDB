@@ -1,6 +1,7 @@
 ---
-- name: ({{ notes }}) free the slab objects and pagecache
+- name: ({{ notes }}) free slab objects and pagecache
   # See https://www.kernel.org/doc/Documentation/sysctl/vm.txt
   become: yes
   shell: sync; echo 3 > /proc/sys/vm/drop_caches
+  changed_when: True
 ...

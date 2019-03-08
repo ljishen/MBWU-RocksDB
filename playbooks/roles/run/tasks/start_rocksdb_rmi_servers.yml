@@ -1,0 +1,13 @@
+---
+- name: ({{ notes }}) start RocksDB RMI servers
+  shell: >
+    nohup java -jar {{ rocksdbjni_rmi_jar }}
+    {{ rmi_ports[loop_idx] }} {{ inventory_hostname }}
+    < /dev/null > {{ remote_nohup_output_dir }}/rocksdb-rmi_nohup.out 2>&1 &
+    echo $! > {{ rocksdb_pid_file }}
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
+    index_var: loop_idx
+  changed_when: True
+...

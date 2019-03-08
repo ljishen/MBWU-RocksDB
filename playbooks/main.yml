@@ -4,9 +4,11 @@
   vars:
     core_workloads: [ 'workloada', 'workloadb', 'workloadc', 'workloadd', 'workloade', 'workloadf' ]
     runtimes_dir: "{{ workdir }}/runtimes"
-    ycsb_dir: "{{ runtimes_dir }}/{{ device_name }}/YCSB"
-    maven_dir: "{{ runtimes_dir }}/apache-maven-{{ maven_version }}"
-    rocksdbjni_rmi_exe: "{{ runtimes_dir }}/rocksdbjni-rmi-{{ rocksdbjni_rmi_version }}-jar-with-dependencies.jar"
+    software_dir: "{{ runtimes_dir }}/software"
+    ycsb_dir: "{{ software_dir }}/YCSB/{{ inventory_hostname }}/{{ device_name }}"
+    maven_dir: "{{ software_dir }}/apache-maven-{{ maven_version }}"
+    fio_dir: "{{ software_dir }}/fio-fio-{{ fio_version }}"
+    rocksdbjni_rmi_jar: "{{ software_dir }}/rocksdbjni-rmi-{{ rocksdbjni_rmi_version }}-jar-with-dependencies.jar"
     device_fullnames: []
   pre_tasks:
     - name: collect the name of all test devices
@@ -36,6 +38,14 @@
       failed_when: item.stat.isblk is not defined or not item.stat.isblk
       loop: "{{ stat_res.results }}"
 
+    - name: check whether the number of devics the same as the number of rmi ports
+      debug:
+        msg: >
+          The number of devices specified is not the same as the number of rmi ports
+          for host {{ inventory_hostname }}
+      when: device_names | length != rmi_ports | length
+      failed_when: device_names | length != rmi_ports | length
+
     - name: collect run workloads
       set_fact:
         run_workloads: "{{ ycsb_run_workloads.split(',') }}"
@@ -46,19 +56,17 @@
         path: "{{ item }}"
       when: item not in core_workloads
       loop: "{{ run_workloads }}"
-      delegate_to: localhost
       register: stat_res
+      delegate_to: localhost
     - name: verify the paths of user-defined workload parameter files
       debug:
         msg: >
           Please verify the path of the workload parameter file {{ item.item }}
-      when: item.stat is defined and not item.stat.exists
-      failed_when: item.stat is defined and not item.stat.exists
+      when: item.stat.isreg is not defined or not item.stat.isreg
+      failed_when: item.stat.isreg is not defined or not item.stat.isreg
       loop: "{{ stat_res.results }}"
 
   roles:
     - setup
-    # - role: run
-    #   vars:
-    #     local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
+    - run
 ...

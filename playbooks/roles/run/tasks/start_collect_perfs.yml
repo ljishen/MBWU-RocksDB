@@ -24,4 +24,5 @@
     - { command: "pidstat -G java -ult {{ perf_stats_report_interval_in_secs }}",
         remote_log_file: "{{ remote_pidstat_log_file }}",
         pid_file: "{{ pidstat_pid_file }}" }
+  changed_when: True
 ...

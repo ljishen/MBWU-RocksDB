@@ -8,6 +8,8 @@
   loop: "{{ device_fullnames }}"
   loop_control:
     loop_var: device_fullname
+  register: comm_res
+  changed_when: comm_res.rc == 0
 
 - include_tasks: remove_partitions.yml
   loop: "{{ device_fullnames }}"
@@ -25,6 +27,7 @@
   loop: "{{ device_fullnames }}"
   loop_control:
     loop_var: device_fullname
+  changed_when: True
 
 - name: ({{ notes }}) check device purge status
   include_tasks: wait_async_task.yml
@@ -46,6 +49,7 @@
   loop: "{{ device_names }}"
   loop_control:
     loop_var: device_name
+  changed_when: True
 
 - name: ({{ notes }}) check wipc status
   include_tasks: wait_async_task.yml
@@ -76,7 +80,7 @@
   loop_control:
     loop_var: device_fullname
 
-- name: ({{ notes }}) mount devices to the related mountpoints
+- name: ({{ notes }}) mount devices to related mountpoints
   become: yes
   command: mount -o nodiscard {{ device_fullname }} {{ device_mountpoint }}
   args:
@@ -86,69 +90,66 @@
   loop: "{{ device_fullnames }}"
   loop_control:
     loop_var: device_fullname
+  changed_when: True
 
-- name: ({{ notes }}) ensure the presence of RocksDB data dirs
+- name: ({{ notes }}) update owner of device mountpoints
   become: yes
   file:
     owner: "{{ ansible_user }}"
-    path: "{{ rocksdb_data_dir }}"
+    path: "{{ device_mountpoint }}"
     state: directory
   loop: "{{ device_names }}"
   loop_control:
     loop_var: device_name
 
+- include_tasks: start_rocksdb_rmi_servers.yml
+
 - include_tasks: free_cache.yml
 
-- include_tasks: start_blkstat.yml
-  when: trace_load_block_rq
+- block:
+    - name: ({{ notes }}) load data to remote devices in the background
+      shell: >
+        nohup stdbuf -oL -eL
+        bin/ycsb load rocksdb -s
+        -P {{ ycsb_workload_file }}
+        -target {{ target_ops_per_sec_on_load }}
+        -p rocksdb.dir={{ rocksdb_data_dir }}
+        -p options.file={{ rocksdb_remote_input_options_file }}
+        -p registry.port={{ rmi_ports[loop_idx] }}
+        -p registry.host={{ inventory_hostname }}
+        < /dev/null > {{ ycsb_load_output_file }} 2>&1 &
+      args:
+        chdir: "{{ ycsb_dir }}"
+      environment:
+        PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
+        index_var: loop_idx
+      changed_when: True
 
-- name: ({{ notes }}) load the data to devices in the background
-  shell: >
-    nohup stdbuf -oL -eL
-    bin/ycsb load rocksdb -s
-    -P {{ remote_workload_file }}
-    -target {{ target_ops_per_sec_on_load }}
-    -p rocksdb.dir={{ rocksdb_data_dir }}
-    -p options.file={{ rocksdb_remote_input_options_file }}
-    < /dev/null > {{ remote_load_output_file }} 2>&1 &
-  args:
-    chdir: "{{ ycsb_dir }}"
-  environment:
-    PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
-  loop: "{{ device_names }}"
-  loop_control:
-    loop_var: device_name
+    - include_tasks: save_ycsb_pids.yml
+      vars:
+        ycsb_pid_file: "{{ ycsb_load_pid_file }}"
 
-- include_tasks: save_ycsb_pids.yml
-  vars:
-    ycsb_pid_file: "{{ ycsb_load_pid_file }}"
+    - name: ({{ notes }}) check YCSB load status
+      include_tasks: wait_async_task.yml
+      vars:
+        pid_file: "{{ ycsb_load_pid_file }}"
+        delay: "{{ retry_delay_30_secs }}"
+      loop: "{{ device_names }}"
+      loop_control:
+        loop_var: device_name
+  delegate_to: localhost
 
-- name: ({{ notes }}) check YCSB load status
-  include_tasks: wait_async_task.yml
-  vars:
-    pid_file: "{{ ycsb_load_pid_file }}"
-    delay: "{{ retry_delay_30_secs }}"
-  loop: "{{ device_names }}"
-  loop_control:
-    loop_var: device_name
-
-- include_tasks: stop_blkstat.yml
-  when: trace_load_block_rq
+- include_tasks: stop_rocksdb_rmi_servers.yml
 
 - name: ({{ notes }}) print the size of database dir after loaded
   command: du -BK {{ rocksdb_data_dir }}
   loop: "{{ device_names }}"
   loop_control:
     loop_var: device_name
-
-- name: backup YCSB load outputs
-  include_tasks: backup_file.yml
-  vars:
-    local_file: "{{ local_load_output_file }}"
-    remote_file: "{{ remote_load_output_file }}"
-  loop: "{{ device_names }}"
-  loop_control:
-    loop_var: device_name
+  changed_when: False
 
 - name: backup RocksDB log files
   include_tasks: backup_file.yml

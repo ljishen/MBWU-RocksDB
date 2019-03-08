@@ -8,4 +8,5 @@
     - { pid_file: "{{ memstat_pid_file }}", signal: SIGTERM }
     - { pid_file: "{{ iostat_pid_file }}", signal: SIGTERM }
     - { pid_file: "{{ pidstat_pid_file }}", signal: SIGINT }
+  changed_when: True
 ...

@@ -2,14 +2,17 @@
 - name: ({{ notes }}) get the PIDs of the YCSB processes
   # this command always exits with 0
   shell: >
+    set -o pipefail &&
     ps -eo user,pid,ppid,c,stime,tname,time,args |
-    grep -E [j]ava.+{{ remote_workload_file }} |
+    grep -E [j]ava.+{{ ycsb_workload_file }} |
     awk '{print $2}'
+  args:
+    executable: /bin/bash
   loop: "{{ device_names }}"
   loop_control:
     loop_var: device_name
   register: comm_ycsb_pid
-  until: comm_ycsb_pid.stdout != ""
+  until: comm_ycsb_pid.stdout
   retries: "{{ 60 * 3 }}"
   delay: 1
   changed_when: False
@@ -19,4 +22,5 @@
   vars:
     device_name: "{{ item.device_name }}"
   loop: "{{ comm_ycsb_pid.results }}"
+  changed_when: True
 ...

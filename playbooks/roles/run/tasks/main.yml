@@ -1,11 +1,32 @@
 ---
-- name: ensure the presence of local tmp data dir {{ local_tmp_data_dir }}
+- name: stop RocksDB RMI servers
+  command: pkill -SIGTERM --full {{ rocksdbjni_rmi_jar | basename }}
+  register: comm_res
+  changed_when: comm_res.rc == 0
+  ignore_errors: yes
+
+- name: wait for related ports to be released
+  pause:
+    seconds: 15
+  when: comm_res.rc == 0
+
+- name: acquire processes running on the rmi ports
   become: yes
-  local_action:
-    module: file
-    owner: "{{ lookup('env', 'USER') }}"
-    path: "{{ local_tmp_data_dir }}"
-    state: directory
+  command: lsof -i :{{ item }}
+  loop: "{{ rmi_ports }}"
+  changed_when: False
+  ignore_errors: yes
+  register: comm_res
+
+- name: check whether the rmi ports are free
+  debug:
+    msg: >
+      Port {{ item.item }} is not free on host {{ inventory_hostname }}
+  when: item.rc == 0
+  failed_when: item.rc == 0
+  loop: "{{ comm_res.results }}"
+
+- include_tasks: create_dirs.yml
 
 - name: fetch the core workload parameter files
   fetch:
@@ -16,27 +37,10 @@
   vars:
     device_name: "{{ device_names[0] }}"
   loop: "{{ core_workloads }}"
+  delegate_to: localhost
   run_once: yes
 
-- include_tasks: create_dirs.yml
-  loop: "{{ device_names }}"
-  loop_control:
-    loop_var: device_name
-
 - block:
-    - name: get info of command {{ fio_bin }} from the shell
-      shell: command -v {{ fio_bin }}
-      changed_when: False
-      ignore_errors: yes
-      register: comm_res
-
-    - name: verify the existence of {{ fio_bin }}
-      debug:
-        msg: >
-          Please double check the existence of the fio path {{ fio_bin }}
-      when: comm_res.rc != 0
-      failed_when: comm_res != 0
-
     - name: get size of devices in bytes
       become: yes
       command: blockdev --getsize64 {{ device_fullname }}
@@ -46,7 +50,8 @@
         loop_var: device_fullname
       register: comm_res
 
-    - set_fact:
+    - name: create a dict to map from device to device_size
+      set_fact:
         # see Combining hashes/dictionaries
         #   https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html#combining-hashes-dictionaries
         device_sizes: "{{ device_sizes | default({}) | combine({ (item.device_fullname | basename) : item.stdout }) }}"
@@ -62,27 +67,16 @@
         url: https://raw.githubusercontent.com/ljishen/SSSPT/master/playbooks/roles/common/files/{{ device_purge_script_filename }}
   when: load_data
 
-- name: copy required scripts to the remote
+- name: copy the {{ io_accounting_script_filename }} script to the remote
   copy:
     backup: no
     dest: "{{ remote_scripts_dir }}/"
     force: yes
     mode: u+rx
-    src: "{{ role_path }}/files/{{ item }}"
-  loop:
-    - "{{ io_size_dist_script_filename }}"
-    - "{{ io_accounting_script_filename }}"
-
-- name: kill the remnant processes for tracing block requests
-  become: yes
-  command: pkill -SIGINT --full blktrace
-  register: comm_res
-  changed_when: comm_res.rc == 0
-  ignore_errors: yes
+    src: "{{ role_path }}/files/{{ io_accounting_script_filename }}"
 
 - include_tasks: repeat_workload.yml
   vars:
-    rocksdb_data_dir: "{{ device_mountpoint }}/{{ rocksdb_data_dirname }}"
     cur_workload: "{{ cur_workload_path | basename }}"
     notes: "{{ cur_workload }}"
   loop: "{{ run_workloads }}"

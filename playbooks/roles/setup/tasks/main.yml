@@ -1,16 +1,16 @@
 ---
-- name: ensure the presence of {{ workdir }}
+- name: ensure the presence of {{ software_dir }}
   become: yes
   file:
     owner: "{{ ansible_user }}"
-    path: "{{ workdir }}"
+    path: "{{ software_dir }}"
     state: directory
 
-- name: ensure the presence of {{ workdir }} (local)
+- name: ensure the presence of {{ software_dir }}
   become: yes
   file:
     owner: "{{ lookup('env', 'USER') }}"
-    path: "{{ workdir }}"
+    path: "{{ software_dir }}"
     state: directory
   delegate_to: localhost
   run_once: yes
@@ -48,25 +48,26 @@
     install_recommends: no
     name:
       - python3-numpy
-      - blktrace
       - parted
       - xfsprogs
       - hdparm
       - fio
+      - build-essential
     state: present
     update_cache: yes
 
 - name: download Apache Maven
   unarchive:
     creates: "{{ maven_dir }}"
-    dest: "{{ runtimes_dir }}"
+    dest: "{{ software_dir }}"
     keep_newer: no
+    owner: "{{ ansible_user }}"
     remote_src: yes
     src: http://mirrors.advancedhosters.com/apache/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.tar.gz
   delegate_to: localhost
   run_once: yes
 
-- name: clone YCSB to local
+- name: clone YCSB
   git:
     bare: no
     clone: yes
@@ -81,17 +82,31 @@
   loop_control:
     loop_var: device_name
   delegate_to: localhost
-  run_once: yes
 
 - name: download rocksdbjni-rmi
   get_url:
     backup: no
-    dest: "{{ rocksdbjni_rmi_exe }}"
+    dest: "{{ rocksdbjni_rmi_jar }}"
     force: yes
     owner: "{{ ansible_user }}"
     url: "https://oss.sonatype.org/content/groups/staging/com/github/ljishen/\
       rocksdbjni-rmi/{{ rocksdbjni_rmi_version }}/\
       rocksdbjni-rmi-{{ rocksdbjni_rmi_version }}-jar-with-dependencies.jar"
+
+- block:
+    - name: download fio {{ fio_version }}
+      unarchive:
+        creates: "{{ fio_dir }}"
+        dest: "{{ software_dir }}"
+        keep_newer: no
+        owner: "{{ ansible_user }}"
+        remote_src: yes
+        src: https://codeload.github.com/axboe/fio/tar.gz/fio-{{ fio_version }}
+    - name: compile fio
+      command: make -j {{ ansible_processor_vcpus }}
+      args:
+        chdir: "{{ fio_dir }}"
+  when: load_data
 
 - name: config scaling governor for online CPUs
   become: yes
@@ -106,24 +121,4 @@
     limit_item: nofile
     limit_type: soft
     value: "{{ nofile_soft_limit }}"
-
-- block:
-    - name: check the mountpoint of debugfs
-      command: findmnt --noheadings --output TARGET --source debugfs
-      register: comm_res
-      changed_when: False
-      ignore_errors: yes
-
-    - name: mount the debugfs if necessary
-      become: yes
-      command: mount -t debugfs none /sys/kernel/debug
-      args:
-        warn: no
-      changed_when: comm_res.rc != 0
-      when: comm_res.rc != 0
-
-    - name: save the mountpoint of debugfs
-      set_fact:
-        debugfs_mountpoint: "{{ comm_res.stdout if comm_res.rc == 0 else '/sys/kernel/debug' }}"
-  when: trace_transactions_block_rq or trace_load_block_rq
 ...
