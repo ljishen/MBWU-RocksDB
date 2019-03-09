@@ -28,9 +28,11 @@
     - name: ({{ notes }}) record IO accounting information for RocksDB RMI processes
       become: yes
       shell: >
-        {{ remote_scripts_dir }}/{{ io_accounting_script_filename }}
+        nohup {{ remote_scripts_dir }}/{{ io_accounting_script_filename }}
         {{ rocksdb_pid_file }}
-        {{ remote_io_accounting_file }} {{ perf_stats_report_interval_in_secs }} &
+        {{ remote_io_accounting_file }}
+        {{ perf_stats_report_interval_in_secs }}
+        < /dev/null > {{ remote_nohup_output_dir }}/io_accounting_nohup.out 2>&1 &
       loop: "{{ device_names }}"
       loop_control:
         loop_var: device_name
