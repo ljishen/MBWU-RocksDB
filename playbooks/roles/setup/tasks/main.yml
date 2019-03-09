@@ -41,7 +41,7 @@
   become: yes
   when: comm_res.rc != 0
 
-- name: install dependent apt packages
+- name: install dependent apt packages (remote)
   become: yes
   apt:
     autoclean: yes
@@ -56,6 +56,17 @@
       - build-essential
     state: present
     update_cache: yes
+
+- name: install dependent apt packages (local)
+  become: yes
+  apt:
+    autoclean: yes
+    install_recommends: no
+    name:
+      - sysstat
+    state: present
+    update_cache: yes
+  delegate_to: localhost
 
 - name: download Apache Maven
   unarchive:
