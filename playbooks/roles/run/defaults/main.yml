@@ -16,6 +16,15 @@ measurement_window_size: 3
 
 perf_stats_report_interval_in_secs: 3
 
+# Performance monitoring commands
+perf_cpustat_command: mpstat -P ALL {{ perf_stats_report_interval_in_secs }}
+
+# we need to check the values of si and so. Because if these numbers are non-zero, you’re out of memory.
+perf_memstat_command: vmstat --one-header --wide --unit K --timestamp {{ perf_stats_report_interval_in_secs }}
+
+perf_iostat_command: iostat -dktxyzH -g {{ device_name }} {{ device_fullname }} {{ perf_stats_report_interval_in_secs }}
+perf_pidstat_command: pidstat -G java -ult {{ perf_stats_report_interval_in_secs }}
+
 single_task_wait_duration: "{{ 60 * 60 * 12 }}"
 retry_delay_30_secs: 30
 
@@ -55,25 +64,39 @@ ycsb_transactions_output_file: "{{ local_output_dir }}/{{ ycsb_transactions_file
 remote_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ device_name }}"
 local_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ inventory_hostname }}/{{ device_name }}"
 
-cpustat_pid_file: "{{ remote_pid_files_dir }}/cpustat.pid"
+rocksdb_sys_usage_info_dir: "{{ remote_output_dir }}/sys_usage/rocksdb"
+local_sys_usage_info_dir: "{{ local_output_dir }}/sys_usage"
+ycsb_sys_usage_info_dir: "{{ local_sys_usage_info_dir }}/ycsb"
+
+cpustat_pid_filename: "cpustat.pid"
+rocksdb_cpustat_pid_file: "{{ remote_pid_files_dir }}/{{ cpustat_pid_filename }}"
+ycsb_cpustat_pid_file: "{{ local_pid_files_dir }}/{{ cpustat_pid_filename }}"
+
 cpustat_log_filename: "cpustat.log"
-local_cpustat_log_file: "{{ local_output_dir }}/{{ cpustat_log_filename }}"
-remote_cpustat_log_file: "{{ remote_output_dir }}/{{ cpustat_log_filename }}"
+rocksdb_cpustat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ cpustat_log_filename }}"
+ycsb_cpustat_log_file: "{{ ycsb_sys_usage_info_dir }}/{{ cpustat_log_filename }}"
 
-memstat_pid_file: "{{ remote_pid_files_dir }}/memstat.pid"
+memstat_pid_filename: "memstat.pid"
+rocksdb_memstat_pid_file: "{{ remote_pid_files_dir }}/{{ memstat_pid_filename }}"
+ycsb_memstat_pid_file: "{{ local_pid_files_dir }}/{{ memstat_pid_filename }}"
+
 memstat_log_filename: "memstat.log"
-local_memstat_log_file: "{{ local_output_dir }}/{{ memstat_log_filename }}"
-remote_memstat_log_file: "{{ remote_output_dir }}/{{ memstat_log_filename }}"
+rocksdb_memstat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ memstat_log_filename }}"
+ycsb_memstat_log_file: "{{ ycsb_sys_usage_info_dir }}/{{ memstat_log_filename }}"
 
-iostat_pid_file: "{{ remote_pid_files_dir }}/iostat.pid"
+iostat_pid_filename: "iostat.pid"
+rocksdb_iostat_pid_file: "{{ remote_pid_files_dir }}/{{ iostat_pid_filename }}"
+
 iostat_log_filename: "iostat.log"
-local_iostat_log_file: "{{ local_output_dir }}/{{ iostat_log_filename }}"
-remote_iostat_log_file: "{{ remote_output_dir }}/{{ iostat_log_filename }}"
+rocksdb_iostat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ iostat_log_filename }}"
 
-pidstat_pid_file: "{{ remote_pid_files_dir }}/pidstat.pid"
+pidstat_pid_filename: "pidstat.pid"
+rocksdb_pidstat_pid_file: "{{ remote_pid_files_dir }}/{{ pidstat_pid_filename }}"
+ycsb_pidstat_pid_file: "{{ local_pid_files_dir }}/{{ pidstat_pid_filename }}"
+
 pidstat_log_filename: "pidstat.log"
-local_pidstat_log_file: "{{ local_output_dir }}/{{ pidstat_log_filename }}"
-remote_pidstat_log_file: "{{ remote_output_dir }}/{{ pidstat_log_filename }}"
+rocksdb_pidstat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ pidstat_log_filename }}"
+ycsb_pidstat_log_file: "{{ ycsb_sys_usage_info_dir }}/{{ pidstat_log_filename }}"
 
 purge_device_pid_file: "{{ remote_pid_files_dir }}/purge_device.pid"
 wipc_pid_file: "{{ remote_pid_files_dir }}/wipc.pid"
