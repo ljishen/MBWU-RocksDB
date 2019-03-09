@@ -25,6 +25,8 @@ perf_memstat_command: vmstat --one-header --wide --unit K --timestamp {{ perf_st
 perf_iostat_command: iostat -dktxyzH -g {{ device_name }} {{ device_fullname }} {{ perf_stats_report_interval_in_secs }}
 perf_pidstat_command: pidstat -G java -ult {{ perf_stats_report_interval_in_secs }}
 
+perf_netstat_command: sar -n DEV {{ perf_stats_report_interval_in_secs }}
+
 single_task_wait_duration: "{{ 60 * 60 * 12 }}"
 retry_delay_30_secs: 30
 
@@ -97,6 +99,14 @@ ycsb_pidstat_pid_file: "{{ local_pid_files_dir }}/{{ pidstat_pid_filename }}"
 pidstat_log_filename: "pidstat.log"
 rocksdb_pidstat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ pidstat_log_filename }}"
 ycsb_pidstat_log_file: "{{ ycsb_sys_usage_info_dir }}/{{ pidstat_log_filename }}"
+
+netstat_pid_filename: "netstat.pid"
+rocksdb_netstat_pid_file: "{{ remote_pid_files_dir }}/{{ netstat_pid_filename }}"
+ycsb_netstat_pid_file: "{{ local_pid_files_dir }}/{{ netstat_pid_filename }}"
+
+netstat_log_filename: "netstat.log"
+rocksdb_netstat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ netstat_log_filename }}"
+ycsb_netstat_log_file: "{{ ycsb_sys_usage_info_dir }}/{{ netstat_log_filename }}"
 
 purge_device_pid_file: "{{ remote_pid_files_dir }}/purge_device.pid"
 wipc_pid_file: "{{ remote_pid_files_dir }}/wipc.pid"

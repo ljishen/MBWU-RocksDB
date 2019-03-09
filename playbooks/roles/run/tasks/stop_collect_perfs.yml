@@ -8,6 +8,7 @@
     - { pid_file: "{{ rocksdb_memstat_pid_file }}", signal: SIGTERM }
     - { pid_file: "{{ rocksdb_iostat_pid_file }}", signal: SIGTERM }
     - { pid_file: "{{ rocksdb_pidstat_pid_file }}", signal: SIGINT }
+    - { pid_file: "{{ rocksdb_netstat_pid_file }}", signal: SIGINT }
   changed_when: True
 
 - name: ({{ notes }}) stop to collect local system performance statistics
@@ -18,6 +19,7 @@
     - { pid_file: "{{ ycsb_cpustat_pid_file }}", signal: SIGINT }
     - { pid_file: "{{ ycsb_memstat_pid_file }}", signal: SIGTERM }
     - { pid_file: "{{ ycsb_pidstat_pid_file }}", signal: SIGINT }
+    - { pid_file: "{{ ycsb_netstat_pid_file }}", signal: SIGINT }
   delegate_to: localhost
   changed_when: True
 ...

@@ -23,6 +23,9 @@
     - { command: "{{ perf_pidstat_command }}",
         remote_log_file: "{{ rocksdb_pidstat_log_file }}",
         pid_file: "{{ rocksdb_pidstat_pid_file }}" }
+    - { command: "{{ perf_netstat_command }}",
+        remote_log_file: "{{ rocksdb_netstat_log_file }}",
+        pid_file: "{{ rocksdb_netstat_pid_file }}" }
   changed_when: True
 
 - name: ({{ notes }}) start to collect local system performance statistics
@@ -43,6 +46,9 @@
     - { command: "{{ perf_pidstat_command }}",
         remote_log_file: "{{ ycsb_pidstat_log_file }}",
         pid_file: "{{ ycsb_pidstat_pid_file }}" }
+    - { command: "{{ perf_netstat_command }}",
+        remote_log_file: "{{ ycsb_netstat_log_file }}",
+        pid_file: "{{ ycsb_netstat_pid_file }}" }
   delegate_to: localhost
   changed_when: True
 ...

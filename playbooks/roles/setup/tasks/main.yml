@@ -47,6 +47,7 @@
     autoclean: yes
     install_recommends: no
     name:
+      - sysstat
       - python3-numpy
       - parted
       - xfsprogs
