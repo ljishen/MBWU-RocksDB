@@ -24,6 +24,8 @@
       register: before_stats_res
 
     - include_tasks: start_rocksdb_rmi_servers.yml
+      vars:
+        phase: transactions
 
     - name: ({{ notes }}) record IO accounting information for RocksDB RMI processes
       become: yes
