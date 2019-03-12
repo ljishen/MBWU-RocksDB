@@ -8,7 +8,8 @@
     ycsb_dir: "{{ software_dir }}/YCSB/{{ inventory_hostname }}/{{ device_name }}"
     maven_dir: "{{ software_dir }}/apache-maven-{{ maven_version }}"
     fio_dir: "{{ software_dir }}/fio-fio-{{ fio_version }}"
-    rocksdbjni_rmi_jar: "{{ software_dir }}/rocksdbjni-rmi-{{ rocksdbjni_rmi_version }}-jar-with-dependencies.jar"
+    rocksdbjni_rmi_dir: "{{ software_dir }}/rocksdbjni-rmi"
+    rocksdbjni_rmi_jar: "{{ rocksdbjni_rmi_dir }}/target/rocksdbjni-rmi-{{ rocksdbjni_rmi_version }}-jar-with-dependencies.jar"
     device_fullnames: []
   pre_tasks:
     - name: collect the name of all test devices
