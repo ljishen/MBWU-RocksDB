@@ -7,8 +7,9 @@
 
 - name: wait for related ports to be released
   pause:
-    seconds: 15
-  when: comm_res.rc == 0
+    seconds: "{{ hostvars[item]['rmi_ports'] | length * 30 }}"
+  when: hostvars[item]['comm_res']['rc'] == 0
+  loop: "{{ groups['all'] }}"
 
 - name: acquire processes running on the rmi ports
   become: yes

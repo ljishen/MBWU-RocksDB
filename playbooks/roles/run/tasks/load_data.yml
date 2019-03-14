@@ -146,8 +146,9 @@
 
 - name: wait for the related ports to be released
   pause:
-    seconds: 5
-  loop: "{{ range(rmi_ports | length) | list }}"
+    # wait each port to be released for 30 seconds
+    seconds: "{{ hostvars[item]['rmi_ports'] | length * 30 }}"
+  loop: "{{ groups['all'] }}"
 
 - name: ({{ notes }}) print the size of database dir after loaded
   command: du -BK {{ rocksdb_data_dir }}
