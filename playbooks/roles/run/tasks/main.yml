@@ -7,7 +7,7 @@
 
 - name: wait for related ports to be released
   pause:
-    seconds: "{{ hostvars[item]['rmi_ports'] | length * 30 }}"
+    minutes: 2
   when: hostvars[item]['comm_res']['rc'] == 0
   loop: "{{ groups['all'] }}"
 

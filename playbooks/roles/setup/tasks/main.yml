@@ -28,6 +28,7 @@
     autoclean: yes
     install_recommends: no
     name:
+      - tar
       - sysstat
       - python3-numpy
       - parted
@@ -48,6 +49,7 @@
     state: present
     update_cache: yes
   delegate_to: localhost
+  run_once: yes
 
 - name: clone YCSB
   git:
@@ -89,16 +91,19 @@
 - block:
     - name: download fio {{ fio_version }}
       unarchive:
-        creates: "{{ fio_dir }}"
+        creates: "{{ fio_dir }}/fio"
         dest: "{{ software_dir }}"
         keep_newer: no
         owner: "{{ ansible_user }}"
         remote_src: yes
         src: https://codeload.github.com/axboe/fio/tar.gz/fio-{{ fio_version }}
+      register: unarchive_res
+
     - name: compile fio
       command: make -j {{ ansible_processor_vcpus }}
       args:
         chdir: "{{ fio_dir }}"
+      when: not unarchive_res.skipped
   when: load_data
 
 - name: config scaling governor for online CPUs

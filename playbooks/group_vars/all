@@ -44,7 +44,7 @@ key_sz_bytes: 16
 max_value_sz_bytes: 4096
 
 
-######################### Debug Properties  #########################
+######################### Debug Properties ###########################
 
 # Whether to run the YCSB loading phase only in the first round (yes), or in
 # every round (no).
@@ -55,4 +55,16 @@ load_data_once: no
 # Whether to run the YCSB loading phase. If set to 'no', the loading phase will
 # be toally skipped without regarding the value of option 'load_data_once'.
 load_data: yes
+
+
+######################### Internal Parameters #########################
+
+core_workloads: [ 'workloada', 'workloadb', 'workloadc', 'workloadd', 'workloade', 'workloadf' ]
+runtimes_dir: "{{ workdir }}/runtimes"
+software_dir: "{{ runtimes_dir }}/software"
+ycsb_dir: "{{ software_dir }}/YCSB/{{ inventory_hostname }}/{{ device_name }}"
+maven_dir: "{{ software_dir }}/apache-maven-{{ maven_version }}"
+fio_dir: "{{ software_dir }}/fio-fio-{{ fio_version }}"
+rocksdbjni_rmi_dir: "{{ software_dir }}/rocksdbjni-rmi"
+rocksdbjni_rmi_jar: "{{ rocksdbjni_rmi_dir }}/target/rocksdbjni-rmi-{{ rocksdbjni_rmi_version }}-jar-with-dependencies.jar"
 ...

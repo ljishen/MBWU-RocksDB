@@ -8,4 +8,8 @@
     loop_var: device_name
   register: comm_res
   changed_when: comm_res.rc == 0
+
+- name: wait for related ports to be released
+  pause:
+    minutes: 2
 ...
