@@ -78,15 +78,16 @@
     repo: https://github.com/ljishen/rocksdbjni-rmi.git
     update: yes
     version: HEAD
+  register: git_res
 
 - name: build rocksdbjni-rmi
   command: mvn clean package
   args:
     chdir: "{{ rocksdbjni_rmi_dir }}"
-    creates: "{{ rocksdbjni_rmi_jar }}"
   environment:
     PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
-  changed_when: True
+  when: git_res.after != git_res.before
+  changed_when: git_res.after != git_res.before
 
 - block:
     - name: download fio {{ fio_version }}
