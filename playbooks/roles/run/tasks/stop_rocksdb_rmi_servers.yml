@@ -11,5 +11,8 @@
 
 - name: wait for related ports to be released
   pause:
+    # The value of TCP_TIMEWAIT_LEN is hardwired to be 60s in the kernel.
+    # Waiting for 2 minutes should be enough for releasing the ports.
+    # https://support.hpe.com/hpsc/doc/public/display?docId=emr_na-c00916755
     minutes: 2
 ...

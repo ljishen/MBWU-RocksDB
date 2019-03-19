@@ -1,6 +1,6 @@
 ---
 - name: stop RocksDB RMI servers
-  command: pkill -SIGTERM --full {{ rocksdbjni_rmi_jar | basename }}
+  command: pkill -SIGTERM --full {{ rocksdbjni_rmi_jar_name }}
   register: comm_res
   changed_when: comm_res.rc == 0
   ignore_errors: yes
