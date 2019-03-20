@@ -104,7 +104,7 @@
       command: make -j {{ ansible_processor_vcpus }}
       args:
         chdir: "{{ fio_dir }}"
-      when: not unarchive_res.skipped
+      when: unarchive_res.skipped is not defined or not unarchive_res.skipped
   when: load_data
 
 - name: config scaling governor for online CPUs
