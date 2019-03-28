@@ -67,4 +67,9 @@ maven_dir: "{{ software_dir }}/apache-maven-{{ maven_version }}"
 fio_dir: "{{ software_dir }}/fio-fio-{{ fio_version }}"
 rocksdbjni_rmi_dir: "{{ software_dir }}/rocksdbjni-rmi"
 rocksdbjni_rmi_jar_name: "rocksdbjni-rmi-{{ rocksdbjni_rmi_version }}-jar-with-dependencies.jar"
+
+scripts_dir: "{{ runtimes_dir }}/scripts"
+discard_sectors_script_filename: discard_sectors.sh
+enable_cpufreq_governor_script_filename: enable_cpufreq_governor.sh
+verify_steady_state_script_filename: verify_steady_state.py
 ...

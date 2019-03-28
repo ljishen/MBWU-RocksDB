@@ -57,21 +57,12 @@
         #   https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html#combining-hashes-dictionaries
         device_sizes: "{{ device_sizes | default({}) | combine({ (item.device_fullname | basename) : item.stdout }) }}"
       loop: "{{ comm_res.results }}"
-
-    - name: download the device purge script
-      get_url:
-        backup: no
-        dest: "{{ remote_scripts_dir }}/{{ device_purge_script_filename }}"
-        force: yes
-        mode: u+rx
-        owner: "{{ ansible_user }}"
-        url: https://raw.githubusercontent.com/ljishen/SSSPT/master/playbooks/roles/common/files/{{ device_purge_script_filename }}
   when: load_data
 
 - name: copy the {{ io_accounting_script_filename }} script to the remote
   copy:
     backup: no
-    dest: "{{ remote_scripts_dir }}/"
+    dest: "{{ scripts_dir }}/"
     force: yes
     mode: u+rx
     src: "{{ role_path }}/files/{{ io_accounting_script_filename }}"

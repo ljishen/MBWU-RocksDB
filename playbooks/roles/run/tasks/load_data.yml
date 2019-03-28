@@ -19,7 +19,7 @@
 - name: ({{ notes }}) purge devices
   become: yes
   shell: >
-    nohup {{ remote_scripts_dir }}/{{ device_purge_script_filename }} {{ device_fullname }}
+    nohup {{ scripts_dir }}/{{ discard_sectors_script_filename }} {{ device_fullname }}
     < /dev/null > {{ remote_nohup_output_dir }}/purge_dev_nohup.out 2>&1 &
     echo $! > {{ purge_device_pid_file }}
   vars:

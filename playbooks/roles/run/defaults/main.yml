@@ -43,8 +43,6 @@ hdparm_id_info_filename: hdparm_id_info
 remote_hdparm_id_info_file: "{{ remote_output_dir }}/{{ hdparm_id_info_filename }}"
 local_hdparm_id_info_file: "{{ local_output_dir }}/{{ hdparm_id_info_filename }}"
 
-remote_scripts_dir: "{{ runtimes_dir }}/scripts"
-device_purge_script_filename: blkerasediscard.sh
 io_accounting_script_filename: io_accounting.sh
 
 wipc_job_filename: wipc.fio

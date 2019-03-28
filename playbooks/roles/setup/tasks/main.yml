@@ -89,6 +89,15 @@
   when: git_res.after != git_res.before
   changed_when: git_res.after != git_res.before
 
+- name: ensure the presence of {{ scripts_dir }}
+  file:
+    path: "{{ scripts_dir }}"
+    state: directory
+  loop:
+    - localhost
+    - "{{ inventory_hostname }}"
+  delegate_to: "{{ item }}"
+
 - block:
     - name: download fio {{ fio_version }}
       unarchive:
@@ -105,13 +114,50 @@
       args:
         chdir: "{{ fio_dir }}"
       when: unarchive_res.skipped is not defined or not unarchive_res.skipped
+
+    - name: download discard sectors script
+      get_url:
+        backup: no
+        dest: "{{ scripts_dir }}/{{ discard_sectors_script_filename }}"
+        force: yes
+        mode: u+rx
+        owner: "{{ ansible_user }}"
+        url: https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/bash/storage/{{ discard_sectors_script_filename }}
   when: load_data
 
-- name: config scaling governor for online CPUs
+- name: download verify steady state script
+  get_url:
+    backup: no
+    dest: "{{ scripts_dir }}/{{ verify_steady_state_script_filename }}"
+    force: yes
+    mode: u+rx
+    owner: "{{ ansible_user }}"
+    url: https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/python/performance/{{ verify_steady_state_script_filename }}
+
+- name: download CPUfreq governor script
+  get_url:
+    backup: no
+    dest: "{{ scripts_dir }}/{{ enable_cpufreq_governor_script_filename }}"
+    force: yes
+    mode: u+rx
+    owner: "{{ lookup('env', 'USER') }}"
+    url: https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/bash/processor/{{ enable_cpufreq_governor_script_filename }}
+  delegate_to: localhost
+  run_once: yes
+
+- name: config scaling governor for online CPUs (remote)
   become: yes
-  script: "{{ role_path }}/files/config_cpu.sh {{ cpu_scaling_governor }}"
+  script: "{{ scripts_dir }}/{{ enable_cpufreq_governor_script_filename }} {{ cpu_scaling_governor }}"
   register: cpu_config_res
   changed_when: "cpu_config_res.rc == 0"
+
+- name: config scaling governor for online CPUs (local)
+  become: yes
+  script: "{{ scripts_dir }}/{{ enable_cpufreq_governor_script_filename }} {{ cpu_scaling_governor }}"
+  register: cpu_config_res
+  changed_when: "cpu_config_res.rc == 0"
+  delegate_to: localhost
+  run_once: yes
 
 - name: set the nofile soft limit to {{ nofile_soft_limit }}
   become: yes

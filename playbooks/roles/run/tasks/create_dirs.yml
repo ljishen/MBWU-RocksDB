@@ -8,13 +8,6 @@
   delegate_to: localhost
   run_once: yes
 
-- name: ensure the presence of {{ remote_scripts_dir }}
-  become: yes
-  file:
-    owner: "{{ ansible_user }}"
-    path: "{{ remote_scripts_dir }}"
-    state: directory
-
 - name: ensure the presence of remote pid files dir
   become: yes
   file:

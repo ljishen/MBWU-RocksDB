@@ -30,7 +30,7 @@
     - name: ({{ notes }}) record IO accounting information for RocksDB RMI processes
       become: yes
       shell: >
-        nohup {{ remote_scripts_dir }}/{{ io_accounting_script_filename }}
+        nohup {{ scripts_dir }}/{{ io_accounting_script_filename }}
         {{ rocksdb_pid_file }}
         {{ remote_io_accounting_file }}
         {{ perf_stats_report_interval_in_secs }}
@@ -152,18 +152,19 @@
       loop: "{{ comm_res.results }}"
 
     - name: ({{ notes }}) get steady state for each device
-      script: >
-        {{ role_path }}/files/verify_ss.py '{{ tracking_values[device_name] }}' {{ measurement_window_size }}
+      command: >
+        {{ scripts_dir }}/{{ verify_steady_state_script_filename }}
+        '{{ tracking_values[device_name] }}' {{ measurement_window_size }}
       loop: "{{ device_names }}"
       loop_control:
         loop_var: device_name
-      register: script_res
+      register: comm_res
       ignore_errors: yes
 
     - name: ({{ notes }}) verify the overall stead state
       set_fact:
         verify_res: "{{ verify_res | default(True) and item.rc == 0 }}"
-      loop: "{{ script_res.results }}"
+      loop: "{{ comm_res.results }}"
 
     - name: ({{ notes }}) update loop condition
       set_fact:
