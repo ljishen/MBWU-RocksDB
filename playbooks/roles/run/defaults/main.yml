@@ -30,7 +30,8 @@ perf_netstat_command: sar -n DEV {{ perf_stats_report_interval_in_secs }}
 single_task_wait_duration: "{{ 60 * 60 * 12 }}"
 retry_delay_30_secs: 30
 
-local_output_dir: "{{ inventory_dir }}/analysis/data/ycsb/{{ inventory_hostname }}/{{ device_name }}/output_{{ cur_workload }}"
+local_output_inventory: "{{ inventory_dir }}/analysis/data/ycsb/{{ inventory_hostname }}"
+local_output_dir: "{{ local_output_inventory }}/{{ device_name }}/output_{{ cur_workload }}"
 remote_data_dir: "{{ workdir }}/data/{{ device_name }}"
 remote_output_dir: "{{ remote_data_dir }}/output_{{ cur_workload }}"
 remote_nohup_output_dir: "{{ remote_data_dir }}/nohup_out"

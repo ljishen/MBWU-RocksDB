@@ -72,7 +72,9 @@
     get_attributes: no
     get_checksum: no
     get_mime: no
-    path: "{{ remote_data_dir | basename }}"
+    path: "{{ local_output_inventory }}"
+  delegate_to: localhost
+  run_once: yes
   register: stat_res
 
 - block:
@@ -89,10 +91,12 @@
       file:
         path: "{{ remote_data_dir | basename }}"
         state: absent
+      vars:
+        device_name: "{{ device_names[0] }}"
 
     - name: delete remnant data files (local)
       file:
-        path: "{{ local_output_dir | basename | basename }}"
+        path: "{{ local_output_inventory }}"
         state: absent
       delegate_to: localhost
       run_once: yes
