@@ -1,5 +1,5 @@
 ---
-- name: save stats of devices to files
+- name: ({{ notes }}) save stats of devices to files
   copy:
     backup: no
     content: "{{ item.stdout }}"

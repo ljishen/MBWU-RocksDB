@@ -10,7 +10,7 @@
     loop_var: device_name
   delegate_to: localhost
 
-- name: ensure the presence of rocksdb sys usage info dirs
+- name: ({{ notes }}) ensure the presence of rocksdb sys usage info dirs
   become: yes
   file:
     owner: "{{ ansible_user }}"
@@ -149,7 +149,7 @@
   loop_control:
     loop_var: device_fullname
 
-- name: init facts
+- name: ({{ notes }}) init facts
   set_fact:
     cur_load_data: "{{ load_data }}"
     outer_notes_repeat: "{{ notes }}"
@@ -177,7 +177,7 @@
   loop_control:
     loop_var: device_name
 
-- name: synchronize remote system usage info
+- name: ({{ notes }}) synchronize remote system usage info
   synchronize:
     delete: yes
     dest: "{{ local_sys_usage_info_dir }}"

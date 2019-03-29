@@ -67,6 +67,37 @@
     mode: u+rx
     src: "{{ role_path }}/files/{{ io_accounting_script_filename }}"
 
+- name: check remnant data files
+  stat:
+    get_attributes: no
+    get_checksum: no
+    get_mime: no
+    path: "{{ remote_data_dir | basename }}"
+  register: stat_res
+
+- block:
+    - name: confirm deleting remnant data files
+      pause:
+        prompt: >
+          Remnant data files from previous run are found!
+          Do you want to delete those files and continue (yes/no)?
+        echo: yes
+      register: confirm_res
+      failed_when: confirm_res.user_input not in ["yes", "y"]
+
+    - name: delete remnant data files (remote)
+      file:
+        path: "{{ remote_data_dir | basename }}"
+        state: absent
+
+    - name: delete remnant data files (local)
+      file:
+        path: "{{ local_output_dir | basename | basename }}"
+        state: absent
+      delegate_to: localhost
+      run_once: yes
+  when: stat_res.stat.isdir is defined and stat_res.stat.isdir
+
 - include_tasks: repeat_workload.yml
   vars:
     cur_workload: "{{ cur_workload_path | basename }}"

@@ -6,7 +6,7 @@
         phase: load
       when: cur_load_data
 
-    - name: update the fact of load data
+    - name: ({{ notes }}) update the fact of load data
       set_fact:
         cur_load_data: False
       when: load_data_once

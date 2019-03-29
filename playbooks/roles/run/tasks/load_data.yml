@@ -151,7 +151,7 @@
     loop_var: device_name
   changed_when: False
 
-- name: backup RocksDB log files
+- name: ({{ notes }}) backup RocksDB log files
   include_tasks: backup_file.yml
   vars:
     local_file: "{{ local_rocksdb_log_file }}"
