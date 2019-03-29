@@ -34,7 +34,6 @@
       - parted
       - xfsprogs
       - hdparm
-      - fio
       - build-essential
     state: present
     update_cache: yes
