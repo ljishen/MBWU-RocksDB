@@ -16,58 +16,11 @@
   loop_control:
     loop_var: device_fullname
 
-- name: ({{ notes }}) purge devices
-  become: yes
-  shell: >
-    nohup {{ scripts_dir }}/{{ discard_sectors_script_filename }} {{ device_fullname }}
-    < /dev/null > {{ remote_nohup_output_dir }}/purge_dev_nohup.out 2>&1 &
-    echo $! > {{ purge_device_pid_file }}
-  vars:
-    device_name: "{{ device_fullname | basename }}"
+- include_tasks: precondition_device.yml
+  when: not rota_of_device[device_fullname]
   loop: "{{ device_fullnames }}"
   loop_control:
     loop_var: device_fullname
-  changed_when: True
-
-- name: ({{ notes }}) check device purge status
-  include_tasks: wait_async_task.yml
-  vars:
-    pid_file: "{{ purge_device_pid_file }}"
-    delay: "{{ retry_delay_30_secs }}"
-  loop: "{{ device_names }}"
-  loop_control:
-    loop_var: device_name
-
-- name: ({{ notes }}) run workload independent pre-conditioning (wipc) on devices
-  become: yes
-  shell: >
-    nohup {{ fio_bin }} {{ remote_wipc_job_file }}
-    --output-format=json+
-    --output {{ remote_wipc_output_file }}
-    < /dev/null > {{ remote_nohup_output_dir }}/wipc_nohup.out 2>&1 &
-    echo $! > {{ wipc_pid_file }}
-  loop: "{{ device_names }}"
-  loop_control:
-    loop_var: device_name
-  changed_when: True
-
-- name: ({{ notes }}) check wipc status
-  include_tasks: wait_async_task.yml
-  vars:
-    pid_file: "{{ wipc_pid_file }}"
-    delay: "{{ retry_delay_30_secs }}"
-  loop: "{{ device_names }}"
-  loop_control:
-    loop_var: device_name
-
-- name: ({{ notes }}) backup wipc outputs
-  include_tasks: backup_file.yml
-  vars:
-    local_file: "{{ local_wipc_output_file }}"
-    remote_file: "{{ remote_wipc_output_file }}"
-  loop: "{{ device_names }}"
-  loop_control:
-    loop_var: device_name
 
 - name: ({{ notes }}) create xfs filesystem for devices
   become: yes

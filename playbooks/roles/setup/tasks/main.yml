@@ -97,6 +97,20 @@
     - "{{ inventory_hostname }}"
   delegate_to: "{{ item }}"
 
+- name: check whether device rotational
+  shell: lsblk --noheadings --nodeps --output ROTA {{ device_fullname }} | tr -d '[:blank:]'
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
+  register: rota_res
+
+- name: store rotational fact
+  set_fact:
+    rota_of_device: >
+      {{ (rota_of_device | default({})) | combine({ item.device_fullname : (item.stdout == '1') }) }}
+    rota_of_inventory: "{{ (rota_of_inventory | default(False)) or (item.stdout == '1') }}"
+  loop: "{{ rota_res.results }}"
+
 - block:
     - name: download fio {{ fio_version }}
       unarchive:
@@ -112,7 +126,7 @@
       command: make -j {{ ansible_processor_vcpus }}
       args:
         chdir: "{{ fio_dir }}"
-      when: unarchive_res.skipped is not defined or not unarchive_res.skipped
+        creates: "{{ fio_dir }}/fio"
 
     - name: download discard sectors script
       get_url:
@@ -122,7 +136,7 @@
         mode: u+rx
         owner: "{{ ansible_user }}"
         url: https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/bash/storage/{{ discard_sectors_script_filename }}
-  when: load_data
+  when: load_data and not rota_of_inventory
 
 - name: download verify steady state script
   get_url:
