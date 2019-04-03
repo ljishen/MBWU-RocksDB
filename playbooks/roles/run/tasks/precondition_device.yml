@@ -1,5 +1,11 @@
 ---
-- name: ({{ notes }}) purge devices
+- name: ({{ notes }}) purge device (using blkdiscard)
+  become: yes
+  command: blkdiscard --verbose {{ device_fullname }}
+  register: blkdiscard_res
+  ignore_errors: yes
+
+- name: ({{ notes }}) purge device (using hdparm)
   become: yes
   shell: >
     nohup {{ scripts_dir }}/{{ discard_sectors_script_filename }} {{ device_fullname }}
@@ -8,6 +14,7 @@
   vars:
     device_name: "{{ device_fullname | basename }}"
   changed_when: True
+  when: blkdiscard_res.rc != 0
 
 - name: ({{ notes }}) check device purge status
   include_tasks: wait_async_task.yml

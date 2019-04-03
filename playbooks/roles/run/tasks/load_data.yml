@@ -28,7 +28,7 @@
     dev: "{{ device_fullname }}"
     force: yes
     fstype: xfs
-    opts: -K
+    opts: -K  # Do not attempt to discard blocks at mkfs time
   loop: "{{ device_fullnames }}"
   loop_control:
     loop_var: device_fullname
