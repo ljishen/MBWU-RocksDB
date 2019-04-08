@@ -149,12 +149,18 @@
   loop_control:
     loop_var: device_fullname
 
-- name: ({{ notes }}) init facts
+- name: ({{ notes }}) init facts (remote)
   set_fact:
     cur_load_data: "{{ load_data }}"
     outer_notes_repeat: "{{ notes }}"
-    tracking_values: {}
+
+- name: ({{ notes }}) init facts (lcoal)
+  set_fact:
+    tracking_values: []
     steady_state: False
+  delegate_to: localhost
+  delegate_facts: True
+  run_once: yes
 
 - include_tasks: do_run.yml
   vars:

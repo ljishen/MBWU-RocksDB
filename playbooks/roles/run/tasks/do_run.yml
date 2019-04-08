@@ -11,21 +11,21 @@
         cur_load_data: False
       when: load_data_once
 
+    - include_tasks: start_rocksdb_rmi_servers.yml
+      vars:
+        phase: transactions
+
     - include_tasks: free_cache.yml
 
     - name: ({{ notes }}) get the stats of devices (before)
       # We don't want to interfere the stats of the block device so just not to
       # write the result directly to file here.
-      shell: "{{ device_stats_command }}"
+      command: "{{ device_stats_command }}"
       loop: "{{ device_names }}"
       loop_control:
         loop_var: device_name
       changed_when: False
       register: before_stats_res
-
-    - include_tasks: start_rocksdb_rmi_servers.yml
-      vars:
-        phase: transactions
 
     - name: ({{ notes }}) record IO accounting information for RocksDB RMI processes
       become: yes
@@ -40,7 +40,7 @@
         loop_var: device_name
 
     - block:
-        - name: ({{ notes }}) execute the workload on remote devices in the background
+        - name: ({{ notes }}) execute workload on remote devices in the background
           shell: >
             nohup stdbuf -oL -eL
             bin/ycsb run rocksdb -s
@@ -136,40 +136,42 @@
         remote_file: "{{ item.stdout }}"
       loop: "{{ comm_res.results }}"
 
-    - name: ({{ notes }}) extract the throughput value from YCSB transactions outputs
+    - name: ({{ notes }}) extract throughputs from YCSB transactions outputs
       command: >
         grep -oP '\[OVERALL\],\s+Throughput\(ops/sec\),\s+\K[\d.]+' {{ ycsb_transactions_output_file }}
       loop: "{{ device_names }}"
       loop_control:
         loop_var: device_name
-      register: comm_res
+      register: extract_res
       delegate_to: localhost
 
-    - name: ({{ notes }}) save throughputs for steady state detection
-      set_fact:
-        tracking_values: >
-          {{ tracking_values | combine({ item.device_name : (tracking_values[item.device_name] | default([])) + [ item.stdout | float ] }) }}
-      loop: "{{ comm_res.results }}"
+    - block:
+        - name: ({{ notes }}) save total throughputs
+          set_fact:
+            # sum elements of a list: https://stackoverflow.com/a/25527795
+            tracking_values: |
+              {% set throughputs = [] -%}
+              {% for host in ansible_play_hosts -%}
+                  {% for res in hostvars[host]['extract_res']['results'] -%}
+                      {% if throughputs.append(res['stdout'] | float) -%}
+                      {% endif -%}
+                  {% endfor -%}
+              {% endfor -%}
+              {{ hostvars['localhost']['tracking_values'] + [ throughputs | sum ] }}
 
-    - name: ({{ notes }}) get steady state for each device
-      command: >
-        {{ scripts_dir }}/{{ verify_steady_state_script_filename }}
-        '{{ tracking_values[device_name] }}' {{ measurement_window_size }}
-      loop: "{{ device_names }}"
-      loop_control:
-        loop_var: device_name
-      register: comm_res
-      ignore_errors: yes
+        - name: ({{ notes }}) check steady state
+          command: >
+            {{ scripts_dir }}/{{ verify_steady_state_script_filename }}
+            '{{ hostvars['localhost']['tracking_values'] }}' {{ measurement_window_size }}
+          register: check_res
+          ignore_errors: yes
 
-    - name: ({{ notes }}) verify the overall stead state
-      set_fact:
-        verify_res: "{{ verify_res | default(True) and item.rc == 0 }}"
-      loop: "{{ comm_res.results }}"
+        - name: ({{ notes }}) update loop condition
+          set_fact:
+            steady_state: "{{ hostvars['localhost']['check_res']['rc'] == 0 }}"
+      delegate_to: localhost
+      delegate_facts: True
+      run_once: yes
 
-    - name: ({{ notes }}) update loop condition
-      set_fact:
-        steady_state: "{{ verify_res }}"
-        verify_res: True
-
-  when: not steady_state
+  when: not hostvars['localhost']['steady_state']
 ...

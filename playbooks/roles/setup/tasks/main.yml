@@ -99,11 +99,16 @@
   delegate_to: "{{ item }}"
 
 - name: check whether device rotational
-  shell: lsblk --noheadings --nodeps --output ROTA {{ device_fullname }} | tr -d '[:blank:]'
+  shell: |
+    set -o pipefail
+    lsblk --noheadings --nodeps --output ROTA {{ device_fullname }} | tr -d '[:blank:]'
+  args:
+    executable: /bin/bash
   loop: "{{ device_fullnames }}"
   loop_control:
     loop_var: device_fullname
   register: rota_res
+  changed_when: False
 
 - name: store rotational fact
   set_fact:
@@ -139,23 +144,19 @@
         url: https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/bash/storage/{{ discard_sectors_script_filename }}
   when: load_data and not rota_of_inventory
 
-- name: download verify steady state script
+- name: download required scripts
   get_url:
     backup: no
-    dest: "{{ scripts_dir }}/{{ verify_steady_state_script_filename }}"
-    force: yes
-    mode: u+rx
-    owner: "{{ ansible_user }}"
-    url: https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/python/performance/{{ verify_steady_state_script_filename }}
-
-- name: download CPUfreq governor script
-  get_url:
-    backup: no
-    dest: "{{ scripts_dir }}/{{ enable_cpufreq_governor_script_filename }}"
+    dest: "{{ scripts_dir }}/{{ item.filename }}"
     force: yes
     mode: u+rx
     owner: "{{ lookup('env', 'USER') }}"
-    url: https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/bash/processor/{{ enable_cpufreq_governor_script_filename }}
+    url: "{{ item.url }}"
+  loop:
+    - { filename: "{{ verify_steady_state_script_filename }}",
+        url: "https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/python/performance/{{ verify_steady_state_script_filename }}" }
+    - { filename: "{{ enable_cpufreq_governor_script_filename }}",
+        url: "https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/bash/processor/{{ enable_cpufreq_governor_script_filename }}" }
   delegate_to: localhost
   run_once: yes
 
