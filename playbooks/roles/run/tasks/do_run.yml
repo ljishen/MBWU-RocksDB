@@ -168,7 +168,7 @@
 
         - name: ({{ notes }}) update loop condition
           set_fact:
-            steady_state: "{{ hostvars['localhost']['check_res']['rc'] == 0 }}"
+            steady_state: "{{ hostvars[inventory_hostname]['check_res']['rc'] == 0 }}"
       delegate_to: localhost
       delegate_facts: True
       run_once: yes

@@ -5,7 +5,7 @@ Ansible Playbook for Running the YCSB RocksDB binding on the Latest RocksDB.
 
 ## Requirements on Control Machine
 
-- `ansible >= 2.5`
+- `ansible >= 2.7.9`
 
 
 ## Usage
