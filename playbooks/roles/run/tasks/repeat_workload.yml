@@ -144,7 +144,7 @@
   loop_control:
     loop_var: device_name
 
-- include_tasks: start_collect_perfs.yml
+- include_tasks: start_collect_perf_stats.yml
   loop: "{{ device_fullnames }}"
   loop_control:
     loop_var: device_fullname
@@ -178,7 +178,7 @@
   loop_control:
     loop_var: cur_round
 
-- include_tasks: stop_collect_perfs.yml
+- include_tasks: stop_collect_perf_stats.yml
   loop: "{{ device_names }}"
   loop_control:
     loop_var: device_name

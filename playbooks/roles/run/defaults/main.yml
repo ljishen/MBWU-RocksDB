@@ -19,7 +19,7 @@ perf_stats_report_interval_in_secs: 3
 # Performance monitoring commands
 perf_cpustat_command: mpstat -P ALL {{ perf_stats_report_interval_in_secs }}
 
-# we need to check the values of si and so. Because if these numbers are non-zero, you’re out of memory.
+# we may need to check the values of si and so. Because if these numbers are non-zero, you’re out of memory.
 perf_memstat_command: vmstat --one-header --wide --unit K --timestamp {{ perf_stats_report_interval_in_secs }}
 
 perf_iostat_command: iostat -dktxyzH -g {{ device_name }} {{ device_fullname }} {{ perf_stats_report_interval_in_secs }}

@@ -1,14 +1,27 @@
-# test_devices: The names of devices under test (DUT) on the host machine.
-#               This is required for each host.
-#               CAUTION: ALL DATA on the DUTs will be ERASED!
+# init_devices: The names of storage devices on the initiator server.
+#               Each device will be assigned to one RocksDB instance for data
+#               operations.
 # rmi_ports:    The system available ports on the host (the device machine).
 #               These ports are used to run RocksDB RIM servers.
 #               Each RocksDB RMI server is only responsible for one device,
 #               so the number of ports should be the same as the number of DUTs.
 #               See https://github.com/ljishen/YCSB/tree/remote-rocksdb/rocksdb
+[rocksdb]
+# EXAMPLES
+# 192.168.140.138   ansible_user=ljishen    init_devices=sda,sdb    rmi_ports=1099,1100
+# 73.162.248.180    ansible_user=ljishen    init_devices=sda    rmi_ports=1099,     ansible_port=22002
+# 192.168.86.31     ansible_user=rock64     init_devices=sda    rmi_ports=1099,
 
-# Examples:
 
-# 192.168.140.138   ansible_user=ljishen    test_devices=sda,sdb    rmi_ports=1099,1100
-# 73.162.248.180    ansible_user=ljishen    test_devices=sda    rmi_ports=1099,     ansible_port=22002
-# 192.168.86.31     ansible_user=rock64     test_devices=sda    rmi_ports=1099,
+# target_devices: The names of physical devices under test (DUT) on the target
+#                 server.
+#                 This is required for each host.
+#                 CAUTION: ALL DATA on the DUTs will be ERASED!
+#
+# You first need to config the target hosts ([storage]) and the initiator hosts
+# ([rocksdb]) to set up connections of devices using protocols such as iSCSI or
+# NVMe-oF.
+# Performance statistics will be collected from these hosts.
+[storage]
+# EXAMPLES
+# 192.168.140.138   ansible_user=ljishen target_devices=sda,sdb
