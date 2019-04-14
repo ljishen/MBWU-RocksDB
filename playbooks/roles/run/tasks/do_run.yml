@@ -11,7 +11,7 @@
         cur_load_data: False
       when: load_data_once
 
-    - include_tasks: start_rocksdb_rmi_servers.yml
+    - include_tasks: rocksdb_rmi_server/start.yml
       vars:
         phase: transactions
 
@@ -64,7 +64,7 @@
             ycsb_pid_file: "{{ ycsb_transactions_pid_file }}"
 
         - name: ({{ notes }}) check YCSB transactions status
-          include_tasks: wait_async_task.yml
+          include_tasks: wait_single_async_task.yml
           vars:
             pid_file: "{{ ycsb_transactions_pid_file }}"
             delay: "{{ retry_delay_30_secs }}"
@@ -73,7 +73,7 @@
             loop_var: device_name
       delegate_to: localhost
 
-    - include_tasks: stop_rocksdb_rmi_servers.yml
+    - include_tasks: rocksdb_rmi_server/stop.yml
 
     - name: ({{ notes }}) get the stats of devices (after)
       shell: "sync; {{ device_stats_command }}"

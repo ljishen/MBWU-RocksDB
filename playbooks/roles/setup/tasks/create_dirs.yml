@@ -1,11 +1,37 @@
 ---
-- name: ensure the presence of {{ local_tmp_data_dir }}
+- name: ensure the presence of {{ software_dir }}
   become: yes
   file:
-    owner: "{{ lookup('env', 'USER') }}"
-    path: "{{ local_tmp_data_dir }}"
+    owner: "{{ ansible_user }}"
+    path: "{{ software_dir }}"
     state: directory
+
+- name: ensure the presence of {{ scripts_dir }}
+  file:
+    owner: "{{ ansible_user }}"
+    path: "{{ scripts_dir }}"
+    state: directory
+
+- block:
+    - name: ensure the presence of {{ software_dir }}
+      file:
+        owner: "{{ lookup('env', 'USER') }}"
+        path: "{{ software_dir }}"
+        state: directory
+
+    - name: ensure the presence of {{ scripts_dir }}
+      file:
+        owner: "{{ lookup('env', 'USER') }}"
+        path: "{{ scripts_dir }}"
+        state: directory
+
+    - name: ensure the presence of {{ local_tmp_data_dir }}
+      file:
+        owner: "{{ lookup('env', 'USER') }}"
+        path: "{{ local_tmp_data_dir }}"
+        state: directory
   delegate_to: localhost
+  become: yes
   run_once: yes
 
 - name: ensure the presence of remote pid files dir
@@ -27,6 +53,7 @@
   loop: "{{ device_names }}"
   loop_control:
     loop_var: device_name
+  when: inventory_hostname in groups['rocksdb']
   delegate_to: localhost
 
 - name: ensure the presence of remote nohup output dir
@@ -48,4 +75,5 @@
   loop: "{{ device_names }}"
   loop_control:
     loop_var: device_name
+  when: inventory_hostname in groups['rocksdb']
 ...

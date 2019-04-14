@@ -1,0 +1,15 @@
+---
+- name: ({{ notes }}) deploy the workload independent pre-conditioning job file
+  become: yes
+  template:
+    backup: no
+    dest: "{{ remote_wipc_job_file }}"
+    force: yes
+    owner: "{{ ansible_user }}"
+    src: "{{ wipc_job_filename }}"
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: "{{ local_wipc_job_file }}"
+    remote_file: "{{ remote_wipc_job_file }}"
+...

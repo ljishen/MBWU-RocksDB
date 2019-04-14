@@ -1,6 +1,6 @@
 # ycsb-rocksdb
 
-Ansible Playbook for Running the YCSB RocksDB binding on the Latest RocksDB.
+Ansible Playbook for Running YCSB on RocksDB RMI Server over Disaggregated Storage Devices.
 
 
 ## Requirements on Control Machine

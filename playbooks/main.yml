@@ -1,13 +1,53 @@
 ---
-- hosts: rocksdb
+- hosts: all
   tasks:
-    - name: collect the name of all test devices
-      set_fact:
-        device_names: "{{ init_devices.split(',') }}"
+    - name: check if rocksdb and storage hosts are specified
+      debug:
+        msg: Please specify {{ item }} hosts.
+      when: not groups[item]
+      failed_when: not groups[item]
+      loop: ['rocksdb', 'storage']
+      run_once: yes
+
+    - block:
+        - name: check whether variable init_devices is valid
+          debug:
+            msg: >
+              Host {{ inventory_hostname }} does not have value for init_devices.
+          when: init_devices is not defined or not init_devices
+          failed_when: init_devices is not defined or not init_devices
+
+        - name: collect the name of all devices on the initiator server
+          set_fact:
+            device_names: "{{ init_devices.split(',') }}"
+
+        - name: check whether the number of devics and the number of RMI ports is the same
+          debug:
+            msg: >
+              The number of devices is different from the number of RMI ports
+              specified for host {{ inventory_hostname }}
+          when: device_names | length != rmi_ports | length
+          failed_when: device_names | length != rmi_ports | length
+      when: inventory_hostname in groups['rocksdb']
+
+    - block:
+        - name: check whether variable target_devices is valid
+          debug:
+            msg: >
+              Host {{ inventory_hostname }} does not have value for target_devices.
+          when: target_devices is not defined or not target_devices
+          failed_when: target_devices is not defined or not target_devices
+
+        - name: collect the name of all devices on the target server
+          set_fact:
+            device_names: "{{ target_devices.split(',') }}"
+      when: inventory_hostname in groups['storage']
+
     - name: get the fullnames of test devices
       set_fact:
         device_fullnames: "{{ device_fullnames | default([]) + [ '/dev/' ~ item ] }}"
       loop: "{{ device_names }}"
+
     - name: retrieve the stat of block devices
       stat:
         follow: no
@@ -20,46 +60,89 @@
       loop_control:
         loop_var: device_fullname
       register: stat_res
+
     - name: verify the existence of block devices
       debug:
         msg: >
-          Please double check the existence of block device {{ item.item }}
+          Cannot find the storage device {{ item.device_fullname }}
+          on host {{ inventory_hostname }}
       when: item.stat.isblk is not defined or not item.stat.isblk
       failed_when: item.stat.isblk is not defined or not item.stat.isblk
       loop: "{{ stat_res.results }}"
 
-    - name: check whether the number of devics the same as the number of rmi ports
-      debug:
-        msg: >
-          The number of devices specified is not the same as the number of rmi ports
-          for host {{ inventory_hostname }}
-      when: device_names | length != rmi_ports | length
-      failed_when: device_names | length != rmi_ports | length
+    - block:
+        - name: read parent device names
+          shell: |
+            set -o pipefail
+            lsblk --noheadings --paths --output PKNAME {{ device_fullname }} | tail -1
+          args:
+            executable: /bin/bash
+          loop: "{{ device_fullnames }}"
+          loop_control:
+            loop_var: device_fullname
+          register: parent_devices
+          changed_when: False
+
+        - name: check if devices are parent devices
+          debug:
+            msg: >
+              Host {{ inventory_hostname }} specifies a storage device {{ item.device_fullname }}
+              which is not a parent device.
+          when: item.stdout != item.device_fullname
+          failed_when: item.stdout != item.device_fullname
+          loop: "{{ parent_devices.results }}"
+
+        - name: read partition information of devices
+          become: yes
+          parted:
+            device: "{{ device_fullname }}"
+            state: info
+            unit: MiB
+          loop: "{{ device_fullnames }}"
+          loop_control:
+            loop_var: device_fullname
+          register: info_of_devices
+
+        - name: check if device is partitioned
+          debug:
+            msg: >
+              Storage device {{ item.device_fullname }} has {{ item.partitions | length }} partitions.
+              Please remove all partitions from this device before continue.
+          when: item.partitions
+          failed_when: item.partitions
+          loop: "{{ info_of_devices.results }}"
+      when: inventory_hostname in groups['storage']
 
     - name: collect run workloads
       set_fact:
         run_workloads: "{{ ycsb_run_workloads.split(',') }}"
-    - name: retrieve the stats of user-defined workload parameter files
-      stat:
-        follow: yes
-        get_attributes: no
-        path: "{{ item }}"
-      when: item not in core_workloads
-      loop: "{{ run_workloads }}"
-      register: stat_res
+
+    - block:
+        - name: retrieve the stats of user-defined workload parameter files
+          stat:
+            follow: yes
+            get_attributes: no
+            path: "{{ workload }}"
+          loop: "{{ run_workloads }}"
+          loop_control:
+            loop_var: workload
+          when: workload not in core_workloads
+          register: stat_res
+
+        - name: verify the paths of user-defined workload parameter files
+          debug:
+            msg: >
+              Please verify the path of the workload parameter file {{ item.workload }}
+          when: item.stat.isreg is not defined or not item.stat.isreg
+          failed_when: item.stat.isreg is not defined or not item.stat.isreg
+          loop: "{{ stat_res.results }}"
       delegate_to: localhost
-    - name: verify the paths of user-defined workload parameter files
-      debug:
-        msg: >
-          Please verify the path of the workload parameter file {{ item.item }}
-      when: item.stat.isreg is not defined or not item.stat.isreg
-      failed_when: item.stat.isreg is not defined or not item.stat.isreg
-      loop: "{{ stat_res.results }}"
+      run_once: yes
 
-- hosts: rocksdb
+- hosts: all
   serial: 1
-  roles: setup
+  roles: [setup]
 
 - hosts: rocksdb
-  roles: run
+  roles: [run]
 ...

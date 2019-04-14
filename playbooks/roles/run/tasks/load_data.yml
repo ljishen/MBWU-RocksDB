@@ -11,16 +11,8 @@
   register: comm_res
   changed_when: comm_res.rc == 0
 
-- include_tasks: remove_partitions.yml
-  loop: "{{ device_fullnames }}"
-  loop_control:
-    loop_var: device_fullname
-
-- include_tasks: precondition_device.yml
-  when: not rota_of_device[device_fullname]
-  loop: "{{ device_fullnames }}"
-  loop_control:
-    loop_var: device_fullname
+- include_tasks: precondition/main.yml
+  run_once: yes
 
 - name: ({{ notes }}) create xfs filesystem for devices
   become: yes
@@ -55,7 +47,7 @@
   loop_control:
     loop_var: device_name
 
-- include_tasks: start_rocksdb_rmi_servers.yml
+- include_tasks: rocksdb_rmi_server/start.yml
 
 - include_tasks: free_cache.yml
 
@@ -86,7 +78,7 @@
         ycsb_pid_file: "{{ ycsb_load_pid_file }}"
 
     - name: ({{ notes }}) check YCSB load status
-      include_tasks: wait_async_task.yml
+      include_tasks: wait_single_async_task.yml
       vars:
         pid_file: "{{ ycsb_load_pid_file }}"
         delay: "{{ retry_delay_30_secs }}"
@@ -95,7 +87,7 @@
         loop_var: device_name
   delegate_to: localhost
 
-- include_tasks: stop_rocksdb_rmi_servers.yml
+- include_tasks: rocksdb_rmi_server/stop.yml
 
 - name: ({{ notes }}) print the size of database dir after loaded
   command: du -BK {{ rocksdb_data_dir }}

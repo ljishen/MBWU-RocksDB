@@ -72,4 +72,14 @@ scripts_dir: "{{ runtimes_dir }}/scripts"
 discard_sectors_script_filename: discard_sectors.sh
 enable_cpufreq_governor_script_filename: enable_cpufreq_governor.sh
 verify_steady_state_script_filename: verify_steady_state.py
+
+local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
+
+remote_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ device_name }}"
+local_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ inventory_hostname }}/{{ device_name }}"
+
+remote_data_dir: "{{ workdir }}/data/{{ device_name }}"
+remote_nohup_output_dir: "{{ remote_data_dir }}/nohup_out"
+
+device_mountpoint: /mnt/{{ device_name }}
 ...

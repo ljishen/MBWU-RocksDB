@@ -1,9 +1,6 @@
 ---
-local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
-
 fio_bin: "{{ fio_dir }}/fio"
 
-device_mountpoint: /mnt/{{ device_name }}
 rocksdb_data_dir: "{{ device_mountpoint }}/{{ rocksdb_data_dirname }}"
 
 # Since the YCSB RocksDB binding just combines all the fields into a single
@@ -30,11 +27,9 @@ perf_netstat_command: sar -n DEV {{ perf_stats_report_interval_in_secs }}
 single_task_wait_duration: "{{ 60 * 60 * 12 }}"
 retry_delay_30_secs: 30
 
-local_output_inventory: "{{ inventory_dir }}/analysis/data/ycsb/{{ inventory_hostname }}"
+local_output_inventory: "{{ inventory_dir }}/analysis/data/ycsb/{{ current_host | default(inventory_hostname) }}"
 local_output_dir: "{{ local_output_inventory }}/{{ device_name }}/output_{{ cur_workload }}"
-remote_data_dir: "{{ workdir }}/data/{{ device_name }}"
 remote_output_dir: "{{ remote_data_dir }}/output_{{ cur_workload }}"
-remote_nohup_output_dir: "{{ remote_data_dir }}/nohup_out"
 
 local_rocksdb_log_file: "{{ local_output_dir }}/LOG_{{ phase }}_round{{ cur_round }}"
 
@@ -62,12 +57,13 @@ ycsb_load_output_file: "{{ local_output_dir }}/{{ ycsb_load_filename }}"
 ycsb_transactions_filename: "transactions_round{{ cur_round }}.dat"
 ycsb_transactions_output_file: "{{ local_output_dir }}/{{ ycsb_transactions_filename }}"
 
-remote_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ device_name }}"
-local_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ inventory_hostname }}/{{ device_name }}"
-
-rocksdb_sys_usage_info_dir: "{{ remote_output_dir }}/sys_usage/rocksdb"
 local_sys_usage_info_dir: "{{ local_output_dir }}/sys_usage"
+remote_sys_usage_info_dir: "{{ remote_output_dir }}/sys_usage"
+
 ycsb_sys_usage_info_dir: "{{ local_sys_usage_info_dir }}/ycsb"
+rocksdb_sys_usage_info_dir: "{{ remote_sys_usage_info_dir }}/rocksdb"
+storage_sys_usage_info_dir: "{{ remote_sys_usage_info_dir }}/storage"
+local_storage_sys_usage_info_dir: "{{ local_sys_usage_info_dir }}/storage"
 
 cpustat_pid_filename: "cpustat.pid"
 rocksdb_cpustat_pid_file: "{{ remote_pid_files_dir }}/{{ cpustat_pid_filename }}"

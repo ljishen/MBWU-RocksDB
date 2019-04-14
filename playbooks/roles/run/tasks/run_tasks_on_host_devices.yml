@@ -1,0 +1,11 @@
+---
+- include_tasks: "{{ tasks_filename }}"
+  vars:
+    current_host: "{{ item }}"
+    ansible_user: "{{ hostvars[ansible_host]['ansible_user'] }}"
+    device_name: "{{ device_fullname | basename }}"
+  loop: "{{ hostvars[item]['device_fullnames'] }}"
+  loop_control:
+    loop_var: device_fullname
+  delegate_to: "{{ item }}"
+...

@@ -1,6 +1,9 @@
 # init_devices: The names of storage devices on the initiator server.
-#               Each device will be assigned to one RocksDB instance for data
-#               operations.
+#               A device can be a storage partition.
+#               Each storage device is assigned to a RocksDB instance for data
+#               operations and a RocksDB instance stores data only to one
+#               storage device.
+#               This is required for each host.
 # rmi_ports:    The system available ports on the host (the device machine).
 #               These ports are used to run RocksDB RIM servers.
 #               Each RocksDB RMI server is only responsible for one device,
@@ -13,14 +16,14 @@
 # 192.168.86.31     ansible_user=rock64     init_devices=sda    rmi_ports=1099,
 
 
-# target_devices: The names of physical devices under test (DUT) on the target
-#                 server.
+# target_devices: The names of PHYSICAL PARENT devices under test (DUT) on the
+#                 target server.
 #                 This is required for each host.
 #                 CAUTION: ALL DATA on the DUTs will be ERASED!
 #
-# You first need to config the target hosts ([storage]) and the initiator hosts
-# ([rocksdb]) to set up connections of devices using protocols such as iSCSI or
-# NVMe-oF.
+# You need to config the target hosts ([storage]) and the initiator hosts
+# ([rocksdb]) beforehand to set up connections of how the init_devices map to
+# the target_devices using protocols such as iSCSI or NVMe-oF.
 # Performance statistics will be collected from these hosts.
 [storage]
 # EXAMPLES

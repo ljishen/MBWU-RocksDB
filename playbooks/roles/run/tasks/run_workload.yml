@@ -20,6 +20,18 @@
   loop_control:
     loop_var: device_name
 
+- include_tasks: run_tasks_on_host_devices.yml
+  vars:
+    tasks_filename: create_remote_storage_sys_usage_info_dirs.yml
+  loop: "{{ groups['storage'] }}"
+  run_once: yes
+
+- include_tasks: create_local_storage_sys_usage_info_dirs.yml
+  vars:
+    current_host: "{{ item }}"
+  loop: "{{ groups['storage'] }}"
+  run_once: yes
+
 - name: ({{ notes }}) request identification info of devices
   become: yes
   shell: >
@@ -59,26 +71,11 @@
   when: not load_data
 
 - block:
-    - name: ({{ notes }}) deploy the workload independent pre-conditioning job file
-      template:
-        backup: no
-        dest: "{{ remote_wipc_job_file }}"
-        force: yes
-        owner: "{{ ansible_user }}"
-        src: "{{ wipc_job_filename }}"
+    - include_tasks: run_tasks_on_host_devices.yml
       vars:
-        device_name: "{{ device_fullname | basename }}"
-      loop: "{{ device_fullnames }}"
-      loop_control:
-        loop_var: device_fullname
-
-    - include_tasks: backup_file.yml
-      vars:
-        local_file: "{{ local_wipc_job_file }}"
-        remote_file: "{{ remote_wipc_job_file }}"
-      loop: "{{ device_names }}"
-      loop_control:
-        loop_var: device_name
+        tasks_filename: deploy_wipc_job_file.yml
+      loop: "{{ groups['storage'] }}"
+      run_once: yes
 
     - name: ({{ notes }}) deploy RocksDB options file
       template:
@@ -144,7 +141,7 @@
   loop_control:
     loop_var: device_name
 
-- include_tasks: start_collect_perf_stats.yml
+- include_tasks: perf_stats/start_collect.yml
   loop: "{{ device_fullnames }}"
   loop_control:
     loop_var: device_fullname
@@ -178,7 +175,7 @@
   loop_control:
     loop_var: cur_round
 
-- include_tasks: stop_collect_perf_stats.yml
+- include_tasks: perf_stats/stop_collect.yml
   loop: "{{ device_names }}"
   loop_control:
     loop_var: device_name
