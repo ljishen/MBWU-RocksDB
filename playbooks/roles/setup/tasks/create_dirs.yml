@@ -32,7 +32,7 @@
         state: directory
   delegate_to: localhost
   become: yes
-  run_once: yes
+  when: inventory_hostname == ansible_play_hosts[0]
 
 - name: ensure the presence of remote pid files dir
   become: yes

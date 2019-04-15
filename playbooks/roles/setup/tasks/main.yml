@@ -2,12 +2,12 @@
 - include_tasks: create_dirs.yml
 
 - name: install JDK and Maven (local)
-  include_tasks: install_jdk_maven.yml
+  import_tasks: install_jdk_maven.yml
   delegate_to: localhost
-  run_once: yes
+  when: inventory_hostname == ansible_play_hosts[0]
 
 - name: install JDK and Maven (rocksdb hosts)
-  include_tasks: install_jdk_maven.yml
+  import_tasks: install_jdk_maven.yml
   when: inventory_hostname in groups['rocksdb']
 
 - name: install dependent apt packages (rocksdb hosts)
@@ -49,7 +49,7 @@
     state: present
     update_cache: yes
   delegate_to: localhost
-  run_once: yes
+  when: inventory_hostname == ansible_play_hosts[0]
 
 - name: clone YCSB
   git:
@@ -88,8 +88,9 @@
     chdir: "{{ rocksdbjni_rmi_dir }}"
   environment:
     PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
+  register: build_res
   when: inventory_hostname in groups['rocksdb'] and git_res.after != git_res.before
-  changed_when: git_res.after != git_res.before
+  changed_when: build_res.rc == 0
 
 - block:
     - name: check whether device rotational
@@ -153,7 +154,7 @@
     - { filename: "{{ enable_cpufreq_governor_script_filename }}",
         url: "https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/bash/processor/{{ enable_cpufreq_governor_script_filename }}" }
   delegate_to: localhost
-  run_once: yes
+  when: inventory_hostname == ansible_play_hosts[0]
 
 - name: config scaling governor for online CPUs
   become: yes
@@ -167,7 +168,7 @@
   register: cpu_config_res
   changed_when: cpu_config_res.rc == 0
   delegate_to: localhost
-  run_once: yes
+  when: inventory_hostname == ansible_play_hosts[0]
 
 - name: set the nofile soft limit to {{ nofile_soft_limit }}
   become: yes
@@ -176,4 +177,5 @@
     limit_item: nofile
     limit_type: soft
     value: "{{ nofile_soft_limit }}"
+  when: inventory_hostname in groups['rocksdb']
 ...

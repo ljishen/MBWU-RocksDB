@@ -88,8 +88,8 @@
             msg: >
               Host {{ inventory_hostname }} specifies a storage device {{ item.device_fullname }}
               which is not a parent device.
-          when: item.stdout != item.device_fullname
-          failed_when: item.stdout != item.device_fullname
+          when: item.stdout and item.stdout != item.device_fullname
+          failed_when: item.stdout and item.stdout != item.device_fullname
           loop: "{{ parent_devices.results }}"
 
         - name: read partition information of devices
@@ -108,8 +108,8 @@
             msg: >
               Storage device {{ item.device_fullname }} has {{ item.partitions | length }} partitions.
               Please remove all partitions from this device before continue.
-          when: item.partitions
-          failed_when: item.partitions
+          when: item.partitions[0]['begin'] != 0
+          failed_when: item.partitions[0]['begin'] != 0
           loop: "{{ info_of_devices.results }}"
       when: inventory_hostname in groups['storage']
 

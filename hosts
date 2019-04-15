@@ -1,7 +1,7 @@
 # init_devices: The names of storage devices on the initiator server.
 #               A device can be a storage partition.
 #               Each storage device is assigned to a RocksDB instance for data
-#               operations and a RocksDB instance stores data only to one
+#               operations and each RocksDB instance stores data only to one
 #               storage device.
 #               This is required for each host.
 # rmi_ports:    The system available ports on the host (the device machine).
