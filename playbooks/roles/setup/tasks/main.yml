@@ -34,6 +34,7 @@
       - sysstat
       - parted
       - hdparm
+      - nvme-cli
       - build-essential
     state: present
     update_cache: yes

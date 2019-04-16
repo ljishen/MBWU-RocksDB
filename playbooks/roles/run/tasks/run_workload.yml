@@ -30,24 +30,11 @@
   loop: "{{ groups['storage'] }}"
   run_once: yes
 
-- name: ({{ notes }}) request identification info of devices
-  become: yes
-  shell: >
-    hdparm -I {{ device_fullname }} > {{ remote_hdparm_id_info_file }}
+- include_tasks: run_tasks_on_host_devices.yml
   vars:
-    device_name: "{{ device_fullname | basename }}"
-  loop: "{{ device_fullnames }}"
-  loop_control:
-    loop_var: device_fullname
-  changed_when: False
-
-- include_tasks: backup_file.yml
-  vars:
-    local_file: "{{ local_hdparm_id_info_file }}"
-    remote_file: "{{ remote_hdparm_id_info_file }}"
-  loop: "{{ device_names }}"
-  loop_control:
-    loop_var: device_name
+    tasks_filename: device_id_info.yml
+  loop: "{{ groups['storage'] }}"
+  run_once: yes
 
 - block:
     - name: ({{ notes }}) check the validity of RocksDB data dirs

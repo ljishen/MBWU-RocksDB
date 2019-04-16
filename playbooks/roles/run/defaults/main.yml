@@ -35,9 +35,9 @@ local_rocksdb_log_file: "{{ local_output_dir }}/LOG_{{ phase }}_round{{ cur_roun
 
 rocksdb_remote_input_options_file: "{{ remote_output_dir }}/{{ rocksdb_options_file | basename }}"
 
-hdparm_id_info_filename: hdparm_id_info
-remote_hdparm_id_info_file: "{{ remote_output_dir }}/{{ hdparm_id_info_filename }}"
-local_hdparm_id_info_file: "{{ local_output_dir }}/{{ hdparm_id_info_filename }}"
+device_id_info_filename: device_id_info
+remote_device_id_info_file: "{{ remote_output_dir }}/{{ device_id_info_filename }}"
+local_device_id_info_file: "{{ local_output_dir }}/{{ device_id_info_filename }}"
 
 io_accounting_script_filename: io_accounting.sh
 
