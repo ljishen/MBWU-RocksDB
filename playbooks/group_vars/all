@@ -78,8 +78,9 @@ local_tmp_data_dir: "{{ inventory_dir }}/tmp/data"
 remote_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ device_name }}"
 local_pid_files_dir: "{{ runtimes_dir }}/pid_files/{{ inventory_hostname }}/{{ device_name }}"
 
-remote_data_dir: "{{ workdir }}/data/{{ device_name }}"
-remote_nohup_output_dir: "{{ remote_data_dir }}/nohup_out"
+remote_data_dir: "{{ workdir }}/data"
+remote_device_data_dir: "{{ remote_data_dir }}/{{ device_name }}"
+remote_nohup_output_dir: "{{ remote_device_data_dir }}/nohup_out"
 
 device_mountpoint: /mnt/{{ device_name }}
 ...

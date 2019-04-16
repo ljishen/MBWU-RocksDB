@@ -5,7 +5,7 @@
     backup: no
     dest: "{{ remote_wipc_job_file }}"
     force: yes
-    owner: "{{ ansible_user }}"
+    owner: "{{ current_ansible_user }}"
     src: "{{ wipc_job_filename }}"
 
 - include_tasks: backup_file.yml

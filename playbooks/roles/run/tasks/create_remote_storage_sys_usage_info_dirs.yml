@@ -2,7 +2,7 @@
 - name: ({{ notes }}) ensure the presence of storage sys usage info dirs
   become: yes
   file:
-    owner: "{{ ansible_user }}"
+    owner: "{{ current_ansible_user }}"
     path: "{{ storage_sys_usage_info_dir }}"
     state: directory
 ...

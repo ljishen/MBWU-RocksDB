@@ -27,8 +27,6 @@
   run_once: yes
 
 - include_tasks: create_local_storage_sys_usage_info_dirs.yml
-  vars:
-    current_host: "{{ item }}"
   loop: "{{ groups['storage'] }}"
   run_once: yes
 
@@ -151,7 +149,7 @@
     cur_load_data: "{{ load_data }}"
     outer_notes_repeat: "{{ notes }}"
 
-- name: ({{ notes }}) init facts (lcoal)
+- name: ({{ notes }}) init facts (local)
   set_fact:
     tracking_values: []
     steady_state: False

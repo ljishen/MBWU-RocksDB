@@ -9,9 +9,9 @@
   pause:
     minutes: 2
   when: hostvars[item]['comm_res']['rc'] == 0
-  loop: "{{ groups['all'] }}"
+  loop: "{{ groups['rocksdb'] }}"
 
-- name: acquire processes running on the rmi ports
+- name: acquire processes running on the RMI ports
   become: yes
   command: lsof -i :{{ item }}
   loop: "{{ rmi_ports }}"
@@ -19,7 +19,7 @@
   ignore_errors: yes
   register: comm_res
 
-- name: check whether the rmi ports are free
+- name: check whether the RMI ports are free
   debug:
     msg: >
       Port {{ item.item }} is not free on host {{ inventory_hostname }}
@@ -74,19 +74,30 @@
       register: confirm_res
       failed_when: confirm_res.user_input not in ["yes", "y"]
 
-    - name: delete remnant data files (remote)
+    - name: delete remnant data files (rocskdb hosts)
+      command: find {{ remote_data_dir }} -type f -delete
+
+    - name: delete remnant data files (storage hosts)
+      command: find {{ remote_data_dir }} -type f -delete
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['storage'] }}"
+      run_once: yes
+
+    - name: delete remnant data files (local for storage hosts)
       file:
-        path: "{{ remote_data_dir | basename }}"
+        path: "{{ local_output_inventory }}"
         state: absent
       vars:
-        device_name: "{{ device_names[0] }}"
+        current_host: "{{ item }}"
+      loop: "{{ groups['storage'] }}"
+      delegate_to: localhost
+      run_once: yes
 
     - name: delete remnant data files (local)
       file:
         path: "{{ local_output_inventory }}"
         state: absent
       delegate_to: localhost
-      run_once: yes
   when: stat_res.stat.isdir is defined and stat_res.stat.isdir
 
 - include_tasks: run_workload.yml

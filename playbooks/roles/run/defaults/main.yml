@@ -29,7 +29,7 @@ retry_delay_30_secs: 30
 
 local_output_inventory: "{{ inventory_dir }}/analysis/data/ycsb/{{ current_host | default(inventory_hostname) }}"
 local_output_dir: "{{ local_output_inventory }}/{{ device_name }}/output_{{ cur_workload }}"
-remote_output_dir: "{{ remote_data_dir }}/output_{{ cur_workload }}"
+remote_output_dir: "{{ remote_device_data_dir }}/output_{{ cur_workload }}"
 
 local_rocksdb_log_file: "{{ local_output_dir }}/LOG_{{ phase }}_round{{ cur_round }}"
 

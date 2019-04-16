@@ -5,7 +5,9 @@
     owner: "{{ lookup('env', 'USER') }}"
     path: "{{ local_storage_sys_usage_info_dir }}"
     state: directory
-  loop: "{{ hostvars[current_host][device_names] }}"
+  vars:
+    current_host: "{{ item }}"
+  loop: "{{ hostvars[item]['device_names'] }}"
   loop_control:
     loop_var: device_name
   delegate_to: localhost
