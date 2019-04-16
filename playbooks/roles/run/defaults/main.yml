@@ -8,7 +8,7 @@ rocksdb_data_dir: "{{ device_mountpoint }}/{{ rocksdb_data_dirname }}"
 # resources for the I/O path.
 fieldcount: 1
 
-# (DO NOT CHANGE) Use the last x number of values to detect steady state.
+# (DO NOT CHANGE) Use the last x number of values for steady state detection.
 measurement_window_size: 3
 
 perf_stats_report_interval_in_secs: 3
@@ -65,43 +65,31 @@ rocksdb_sys_usage_info_dir: "{{ remote_sys_usage_info_dir }}/rocksdb"
 storage_sys_usage_info_dir: "{{ remote_sys_usage_info_dir }}/storage"
 local_storage_sys_usage_info_dir: "{{ local_sys_usage_info_dir }}/storage"
 
-cpustat_pid_filename: "cpustat.pid"
-rocksdb_cpustat_pid_file: "{{ remote_pid_files_dir }}/{{ cpustat_pid_filename }}"
-ycsb_cpustat_pid_file: "{{ local_pid_files_dir }}/{{ cpustat_pid_filename }}"
+cpustat_filename: "cpustat"
+memstat_filename: "memstat"
+iostat_filename:  "iostat"
+pidstat_filename: "pidstat"
+netstat_filename: "netstat"
 
-cpustat_log_filename: "cpustat.log"
-rocksdb_cpustat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ cpustat_log_filename }}"
-ycsb_cpustat_log_file: "{{ ycsb_sys_usage_info_dir }}/{{ cpustat_log_filename }}"
+# two options for variable sys_usage_pid_files_dir:
+  # remote_pid_files_dir
+  # local_pid_files_dir
+sys_usage_pid_files:
+  cpustat: "{{ sys_usage_pid_files_dir }}/{{ cpustat_filename }}.pid"
+  memstat: "{{ sys_usage_pid_files_dir }}/{{ memstat_filename }}.pid"
+  iostat:  "{{ sys_usage_pid_files_dir }}/{{ iostat_filename }}.pid"
+  pidstat: "{{ sys_usage_pid_files_dir }}/{{ pidstat_filename }}.pid"
+  netstat: "{{ sys_usage_pid_files_dir }}/{{ netstat_filename }}.pid"
 
-memstat_pid_filename: "memstat.pid"
-rocksdb_memstat_pid_file: "{{ remote_pid_files_dir }}/{{ memstat_pid_filename }}"
-ycsb_memstat_pid_file: "{{ local_pid_files_dir }}/{{ memstat_pid_filename }}"
-
-memstat_log_filename: "memstat.log"
-rocksdb_memstat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ memstat_log_filename }}"
-ycsb_memstat_log_file: "{{ ycsb_sys_usage_info_dir }}/{{ memstat_log_filename }}"
-
-iostat_pid_filename: "iostat.pid"
-rocksdb_iostat_pid_file: "{{ remote_pid_files_dir }}/{{ iostat_pid_filename }}"
-
-iostat_log_filename: "iostat.log"
-rocksdb_iostat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ iostat_log_filename }}"
-
-pidstat_pid_filename: "pidstat.pid"
-rocksdb_pidstat_pid_file: "{{ remote_pid_files_dir }}/{{ pidstat_pid_filename }}"
-ycsb_pidstat_pid_file: "{{ local_pid_files_dir }}/{{ pidstat_pid_filename }}"
-
-pidstat_log_filename: "pidstat.log"
-rocksdb_pidstat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ pidstat_log_filename }}"
-ycsb_pidstat_log_file: "{{ ycsb_sys_usage_info_dir }}/{{ pidstat_log_filename }}"
-
-netstat_pid_filename: "netstat.pid"
-rocksdb_netstat_pid_file: "{{ remote_pid_files_dir }}/{{ netstat_pid_filename }}"
-ycsb_netstat_pid_file: "{{ local_pid_files_dir }}/{{ netstat_pid_filename }}"
-
-netstat_log_filename: "netstat.log"
-rocksdb_netstat_log_file: "{{ rocksdb_sys_usage_info_dir }}/{{ netstat_log_filename }}"
-ycsb_netstat_log_file: "{{ ycsb_sys_usage_info_dir }}/{{ netstat_log_filename }}"
+# two options for variable sys_usage_log_files_dir:
+  # rocksdb_sys_usage_info_dir
+  # ycsb_sys_usage_info_dir
+sys_usage_log_files:
+  cpustat: "{{ sys_usage_log_files_dir }}/{{ cpustat_filename }}.log"
+  memstat: "{{ sys_usage_log_files_dir }}/{{ memstat_filename }}.log"
+  iostat:  "{{ sys_usage_log_files_dir }}/{{ iostat_filename }}.log"
+  pidstat: "{{ sys_usage_log_files_dir }}/{{ pidstat_filename }}.log"
+  netstat: "{{ sys_usage_log_files_dir }}/{{ netstat_filename }}.log"
 
 purge_device_pid_file: "{{ remote_pid_files_dir }}/purge_device.pid"
 wipc_pid_file: "{{ remote_pid_files_dir }}/wipc.pid"
