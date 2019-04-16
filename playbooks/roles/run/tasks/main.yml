@@ -27,6 +27,14 @@
   failed_when: item.rc == 0
   loop: "{{ comm_res.results }}"
 
+- name: delete RocksDB PID files
+  file:
+    path: "{{ rocksdb_pid_file }}"
+    state: absent
+  loop: "{{ device_names }}"
+  loop_control:
+    loop_var: device_name
+
 - name: fetch the core workload parameter files
   fetch:
     dest: "{{ local_tmp_data_dir }}/"
