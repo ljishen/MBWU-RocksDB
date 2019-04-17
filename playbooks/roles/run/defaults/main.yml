@@ -13,17 +13,6 @@ measurement_window_size: 3
 
 perf_stats_report_interval_in_secs: 3
 
-# Performance monitoring commands
-perf_cpustat_command: mpstat -P ALL {{ perf_stats_report_interval_in_secs }}
-
-# we may need to check the values of si and so. Because if these numbers are non-zero, you’re out of memory.
-perf_memstat_command: vmstat --one-header --wide --unit K --timestamp {{ perf_stats_report_interval_in_secs }}
-
-perf_iostat_command: iostat -dktxyzH -g {{ device_name }} {{ device_fullname }} {{ perf_stats_report_interval_in_secs }}
-perf_pidstat_command: pidstat -G java -ult {{ perf_stats_report_interval_in_secs }}
-
-perf_netstat_command: sar -n DEV {{ perf_stats_report_interval_in_secs }}
-
 single_task_wait_duration: "{{ 60 * 60 * 12 }}"
 retry_delay_30_secs: 30
 
@@ -65,31 +54,39 @@ rocksdb_sys_usage_info_dir: "{{ remote_sys_usage_info_dir }}/rocksdb"
 storage_sys_usage_info_dir: "{{ remote_sys_usage_info_dir }}/storage"
 local_storage_sys_usage_info_dir: "{{ local_sys_usage_info_dir }}/storage"
 
-cpustat_filename: "cpustat"
-memstat_filename: "memstat"
-iostat_filename:  "iostat"
-pidstat_filename: "pidstat"
-netstat_filename: "netstat"
+# Performance monitoring tools
+performance_stats:
+    - { name: cpustat,
+        command: "mpstat -P ALL {{ perf_stats_report_interval_in_secs }}",
+        signal: SIGINT
+      }
+      # we may need to check the values of si and so. Because if these numbers are non-zero, you’re out of memory.
+    - { name: memstat,
+        command: "vmstat --one-header --wide --unit K --timestamp {{ perf_stats_report_interval_in_secs }}",
+        signal: SIGTERM
+      }
+    - { name: iostat,
+        command: "iostat -dktxyzH -g {{ device_name }} {{ device_fullname }} {{ perf_stats_report_interval_in_secs }}",
+        signal: SIGTERM
+      }
+    - { name: pidstat,
+        command: "pidstat -G java -ult {{ perf_stats_report_interval_in_secs }}",
+        signal: SIGINT
+      }
+    - { name: netstat,
+        command: "sar -n DEV {{ perf_stats_report_interval_in_secs }}",
+        signal: SIGINT
+      }
 
 # two options for variable sys_usage_pid_files_dir:
   # remote_pid_files_dir
   # local_pid_files_dir
-sys_usage_pid_files:
-  cpustat: "{{ sys_usage_pid_files_dir }}/{{ cpustat_filename }}.pid"
-  memstat: "{{ sys_usage_pid_files_dir }}/{{ memstat_filename }}.pid"
-  iostat:  "{{ sys_usage_pid_files_dir }}/{{ iostat_filename }}.pid"
-  pidstat: "{{ sys_usage_pid_files_dir }}/{{ pidstat_filename }}.pid"
-  netstat: "{{ sys_usage_pid_files_dir }}/{{ netstat_filename }}.pid"
+sys_usage_pid_file: "{{ sys_usage_pid_files_dir }}/{{ performance_stat_name }}.pid"
 
 # two options for variable sys_usage_log_files_dir:
   # rocksdb_sys_usage_info_dir
   # ycsb_sys_usage_info_dir
-sys_usage_log_files:
-  cpustat: "{{ sys_usage_log_files_dir }}/{{ cpustat_filename }}.log"
-  memstat: "{{ sys_usage_log_files_dir }}/{{ memstat_filename }}.log"
-  iostat:  "{{ sys_usage_log_files_dir }}/{{ iostat_filename }}.log"
-  pidstat: "{{ sys_usage_log_files_dir }}/{{ pidstat_filename }}.log"
-  netstat: "{{ sys_usage_log_files_dir }}/{{ netstat_filename }}.log"
+sys_usage_log_file: "{{ sys_usage_log_files_dir }}/{{ performance_stat_name }}.log"
 
 purge_device_pid_file: "{{ remote_pid_files_dir }}/purge_device.pid"
 wipc_pid_file: "{{ remote_pid_files_dir }}/wipc.pid"

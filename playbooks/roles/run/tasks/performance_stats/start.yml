@@ -1,0 +1,34 @@
+---
+- name: ({{ notes }}) start to collect remote system performance statistics
+  # we use stdbuf to turn off buffering of the output redirection.
+  #   https://linux.die.net/man/1/stdbuf
+  #   https://stackoverflow.com/a/1429973
+  shell: >
+    nohup stdbuf -oL -eL {{ item.command }} < /dev/null > {{ sys_usage_log_file }} 2>&1 &
+    echo $! > {{ sys_usage_pid_file }}
+  environment:
+    S_TIME_FORMAT: ISO
+  vars:
+    device_name: "{{ device_fullname | basename }}"
+    performance_stat_name: "{{ item.name }}"
+    sys_usage_pid_files_dir: "{{ remote_pid_files_dir }}"
+    sys_usage_log_files_dir: "{{ rocksdb_sys_usage_info_dir }}"
+  loop: "{{ performance_stats }}"
+  changed_when: True
+
+- name: ({{ notes }}) start to collect local system performance statistics
+  shell: >
+    nohup stdbuf -oL -eL {{ item.command }} < /dev/null > {{ sys_usage_log_file }} 2>&1 &
+    echo $! > {{ sys_usage_pid_file }}
+  environment:
+    S_TIME_FORMAT: ISO
+  vars:
+    device_name: "{{ device_fullname | basename }}"
+    performance_stat_name: "{{ item.name }}"
+    sys_usage_pid_files_dir: "{{ local_pid_files_dir }}"
+    sys_usage_log_files_dir: "{{ ycsb_sys_usage_info_dir }}"
+  loop: "{{ performance_stats }}"
+  when: item.name != "iostat"
+  delegate_to: localhost
+  changed_when: True
+...

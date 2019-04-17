@@ -1,0 +1,23 @@
+---
+- name: ({{ notes }}) stop to collect remote system performance statistics
+  shell: >
+    pkill --signal {{ item.signal }} --pidfile {{ sys_usage_pid_file }} ;
+    rm --force {{ sys_usage_pid_file }}
+  vars:
+    sys_usage_pid_files_dir: "{{ remote_pid_files_dir }}"
+    performance_stat_name: "{{ item.name }}"
+  loop: "{{ performance_stats }}"
+  changed_when: True
+
+- name: ({{ notes }}) stop to collect local system performance statistics
+  shell: >
+    pkill --signal {{ item.signal }} --pidfile {{ sys_usage_pid_file }} ;
+    rm --force {{ sys_usage_pid_file }}
+  vars:
+    sys_usage_pid_files_dir: "{{ local_pid_files_dir }}"
+    performance_stat_name: "{{ item.name }}"
+  loop: "{{ performance_stats }}"
+  when: item.name != "iostat"
+  delegate_to: localhost
+  changed_when: True
+...
