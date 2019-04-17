@@ -1,5 +1,4 @@
-# init_devices: The names of storage devices on the initiator server.
-#               A device can be a storage partition.
+# init_devices: The names of PARENT storage devices on the initiator server.
 #               Each storage device is assigned to a RocksDB instance for data
 #               operations and each RocksDB instance stores data only to one
 #               storage device.
@@ -16,8 +15,8 @@
 # 192.168.86.31     ansible_user=rock64     init_devices=sda        rmi_ports=1099,
 
 
-# target_devices: The names of PHYSICAL PARENT devices under test (DUT) on the
-#                 target server.
+# target_devices: The names of PHYSICAL PARENT storage devices under test (DUT)
+#                 on the target server.
 #                 This is required for each host.
 #                 CAUTION: ALL DATA on the DUTs will be ERASED!
 #

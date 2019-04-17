@@ -70,28 +70,28 @@
       failed_when: item.stat.isblk is not defined or not item.stat.isblk
       loop: "{{ stat_res.results }}"
 
+    - name: read parent device names
+      shell: |
+        set -o pipefail
+        lsblk --noheadings --paths --output PKNAME {{ device_fullname }} | tail -1
+      args:
+        executable: /bin/bash
+      loop: "{{ device_fullnames }}"
+      loop_control:
+        loop_var: device_fullname
+      register: parent_devices
+      changed_when: False
+
+    - name: check if devices are parent devices
+      debug:
+        msg: >
+          Host {{ inventory_hostname }} specifies a storage device {{ item.device_fullname }}
+          which is not a parent device.
+      when: item.stdout and item.stdout != item.device_fullname
+      failed_when: item.stdout and item.stdout != item.device_fullname
+      loop: "{{ parent_devices.results }}"
+
     - block:
-        - name: read parent device names
-          shell: |
-            set -o pipefail
-            lsblk --noheadings --paths --output PKNAME {{ device_fullname }} | tail -1
-          args:
-            executable: /bin/bash
-          loop: "{{ device_fullnames }}"
-          loop_control:
-            loop_var: device_fullname
-          register: parent_devices
-          changed_when: False
-
-        - name: check if devices are parent devices
-          debug:
-            msg: >
-              Host {{ inventory_hostname }} specifies a storage device {{ item.device_fullname }}
-              which is not a parent device.
-          when: item.stdout and item.stdout != item.device_fullname
-          failed_when: item.stdout and item.stdout != item.device_fullname
-          loop: "{{ parent_devices.results }}"
-
         - name: read partition information of devices
           become: yes
           parted:
@@ -101,16 +101,15 @@
           loop: "{{ device_fullnames }}"
           loop_control:
             loop_var: device_fullname
-          register: info_of_devices
+          register: device_infos
 
-        - name: check if device is partitioned
-          debug:
-            msg: >
-              Storage device {{ item.device_fullname }} has {{ item.partitions | length }} partitions.
-              Please remove all partitions (and partition-table signatures) from this device before continue.
-          when: item.partitions
-          failed_when: item.partitions
-          loop: "{{ info_of_devices.results }}"
+        - name: remove all partitions from devices
+          become: yes
+          parted:
+            device: "{{ item.0.disk.dev }}"
+            number: "{{ item.1.num }}"
+            state: absent
+          loop: "{{ device_infos.results | subelements('partitions', { 'skip_missing': true }) }}"
       when: inventory_hostname in groups['storage']
 
     - name: collect run workloads
