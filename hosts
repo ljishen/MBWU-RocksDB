@@ -12,8 +12,8 @@
 [rocksdb]
 # EXAMPLES
 # 192.168.140.138   ansible_user=ljishen    init_devices=sda,sdb    rmi_ports=1099,1100
-# 73.162.248.180    ansible_user=ljishen    init_devices=sda    rmi_ports=1099,     ansible_port=22002
-# 192.168.86.31     ansible_user=rock64     init_devices=sda    rmi_ports=1099,
+# 73.162.248.180    ansible_user=ljishen    init_devices=sda        rmi_ports=1099,     ansible_port=22002
+# 192.168.86.31     ansible_user=rock64     init_devices=sda        rmi_ports=1099,
 
 
 # target_devices: The names of PHYSICAL PARENT devices under test (DUT) on the
@@ -27,4 +27,4 @@
 # Performance statistics will be collected from these hosts.
 [storage]
 # EXAMPLES
-# 192.168.140.138   ansible_user=ljishen target_devices=sda,sdb
+# 192.168.140.138   ansible_user=ljishen    target_devices=sda,sdb
