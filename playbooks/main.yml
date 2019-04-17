@@ -107,9 +107,9 @@
           debug:
             msg: >
               Storage device {{ item.device_fullname }} has {{ item.partitions | length }} partitions.
-              Please remove all partitions from this device before continue.
-          when: item.partitions[0]['begin'] != 0
-          failed_when: item.partitions[0]['begin'] != 0
+              Please remove all partitions (and partition-table signatures) from this device before continue.
+          when: item.partitions
+          failed_when: item.partitions
           loop: "{{ info_of_devices.results }}"
       when: inventory_hostname in groups['storage']
 

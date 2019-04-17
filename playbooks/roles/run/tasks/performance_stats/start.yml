@@ -9,7 +9,6 @@
   environment:
     S_TIME_FORMAT: ISO
   vars:
-    device_name: "{{ device_fullname | basename }}"
     performance_stat_name: "{{ item.name }}"
     sys_usage_pid_files_dir: "{{ remote_pid_files_dir }}"
     sys_usage_log_files_dir: "{{ rocksdb_sys_usage_info_dir }}"
@@ -23,7 +22,6 @@
   environment:
     S_TIME_FORMAT: ISO
   vars:
-    device_name: "{{ device_fullname | basename }}"
     performance_stat_name: "{{ item.name }}"
     sys_usage_pid_files_dir: "{{ local_pid_files_dir }}"
     sys_usage_log_files_dir: "{{ ycsb_sys_usage_info_dir }}"

@@ -1,0 +1,14 @@
+---
+- name: ({{ notes }}) kill local remnant processes
+  become: yes
+  shell: >
+    pkill -SIGTERM --pidfile {{ pid_file }} ;
+    rm --force {{ pid_file }}
+  loop:
+    - "{{ ycsb_load_pid_file }}"
+    - "{{ ycsb_transactions_pid_file }}"
+  loop_control:
+    loop_var: pid_file
+  changed_when: True
+  delegate_to: localhost
+...
