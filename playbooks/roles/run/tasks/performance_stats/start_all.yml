@@ -1,0 +1,20 @@
+---
+- include_tasks: performance_stats/start.yml
+  vars:
+    system: ycsb
+    sys_usage_pid_files_dir: "{{ remote_pid_files_dir }}"
+    sys_usage_log_files_dir: "{{ rocksdb_sys_usage_info_dir }}"
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
+
+- include_tasks: performance_stats/local.yml
+  vars:
+    action_filename: start.yml
+    system: local
+    sys_usage_pid_files_dir: "{{ local_pid_files_dir }}"
+    sys_usage_log_files_dir: "{{ ycsb_sys_usage_info_dir }}"
+  loop: "{{ device_fullnames }}"
+  loop_control:
+    loop_var: device_fullname
+...

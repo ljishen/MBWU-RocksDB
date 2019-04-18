@@ -121,12 +121,7 @@
       loop: "{{ template_res.results }}"
   delegate_to: localhost
 
-- include_tasks: performance_stats/stop.yml
-  vars:
-    device_name: "{{ device_fullname | basename }}"
-  loop: "{{ device_fullnames }}"
-  loop_control:
-    loop_var: device_fullname
+- import_tasks: performance_stats/stop_all.yml
 
 - include_tasks: run_tasks_on_host_devices.yml
   vars:
@@ -139,12 +134,7 @@
   loop_control:
     loop_var: device_name
 
-- include_tasks: performance_stats/start.yml
-  vars:
-    device_name: "{{ device_fullname | basename }}"
-  loop: "{{ device_fullnames }}"
-  loop_control:
-    loop_var: device_fullname
+- import_tasks: performance_stats/start_all.yml
 
 - name: ({{ notes }}) init facts (remote)
   set_fact:
@@ -175,12 +165,7 @@
   loop_control:
     loop_var: cur_round
 
-- include_tasks: performance_stats/stop.yml
-  vars:
-    device_name: "{{ device_fullname | basename }}"
-  loop: "{{ device_fullnames }}"
-  loop_control:
-    loop_var: device_fullname
+- import_tasks: performance_stats/stop_all.yml
 
 - name: ({{ notes }}) synchronize remote system usage info
   synchronize:
