@@ -1,0 +1,7 @@
+---
+- include_tasks: performance_stats/{{ action_filename }}
+  vars:
+    system: storage
+    sys_usage_pid_files_dir: "{{ remote_pid_files_dir }}"
+    sys_usage_log_files_dir: "{{ storage_sys_usage_info_dir }}"
+...

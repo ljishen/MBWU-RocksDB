@@ -1,6 +1,6 @@
 ---
 - import_tasks: "{{ action_filename }}"
   vars:
-    perf_name_is_not: iostat
+    perf_stat_name_is_not: iostat
   delegate_to: localhost
 ...

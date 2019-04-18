@@ -121,7 +121,9 @@
       loop: "{{ template_res.results }}"
   delegate_to: localhost
 
-- import_tasks: performance_stats/stop_all.yml
+- import_tasks: performance_stats/action.yml
+  vars:
+    action_filename: stop.yml
 
 - include_tasks: run_tasks_on_host_devices.yml
   vars:
@@ -134,7 +136,9 @@
   loop_control:
     loop_var: device_name
 
-- import_tasks: performance_stats/start_all.yml
+- import_tasks: performance_stats/action.yml
+  vars:
+    action_filename: start.yml
 
 - name: ({{ notes }}) init facts (remote)
   set_fact:
@@ -165,9 +169,11 @@
   loop_control:
     loop_var: cur_round
 
-- import_tasks: performance_stats/stop_all.yml
+- import_tasks: performance_stats/action.yml
+  vars:
+    action_filename: stop.yml
 
-- name: ({{ notes }}) synchronize remote system usage info
+- name: ({{ notes }}) synchronize rocksdb system usage info
   synchronize:
     delete: yes
     dest: "{{ local_sys_usage_info_dir }}"
@@ -178,4 +184,10 @@
   loop: "{{ device_names }}"
   loop_control:
     loop_var: device_name
+
+- include_tasks: run_tasks_on_host_devices.yml
+  vars:
+    tasks_filename: fetch_storage_sys_usage_info.yml
+  loop: "{{ groups['storage'] }}"
+  run_once: yes
 ...

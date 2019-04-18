@@ -17,6 +17,7 @@
     install_recommends: no
     name:
       - tar
+      - rsync
       - sysstat
       - xfsprogs
       - python3-numpy
@@ -31,6 +32,7 @@
     install_recommends: no
     name:
       - tar
+      - rsync
       - sysstat
       - parted
       - hdparm
@@ -46,6 +48,7 @@
     autoclean: yes
     install_recommends: no
     name:
+      - rsync
       - sysstat
     state: present
     update_cache: yes

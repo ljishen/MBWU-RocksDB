@@ -1,12 +1,14 @@
 ---
 - name: ({{ notes }}) stop to collect {{ system }} performance statistics
   shell: >
-    pkill --signal {{ item.signal }} --pidfile {{ sys_usage_pid_file }} ;
+    pkill --signal {{ perf_stat.signal }} --pidfile {{ sys_usage_pid_file }} ;
     rm --force {{ sys_usage_pid_file }}
   vars:
     device_name: "{{ device_fullname | basename }}"
-    performance_stat_name: "{{ item.name }}"
+    performance_stat_name: "{{ perf_stat.name }}"
   loop: "{{ performance_stats }}"
-  when: item.name != perf_name_is_not | default("")
+  loop_control:
+    loop_var: perf_stat
+  when: perf_stat.name != perf_stat_name_is_not | default("")
   changed_when: True
 ...
