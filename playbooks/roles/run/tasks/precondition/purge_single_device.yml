@@ -12,6 +12,7 @@
     nohup {{ scripts_dir }}/{{ discard_sectors_script_filename }} {{ device_fullname }}
     < /dev/null > {{ remote_nohup_output_dir }}/purge_dev_nohup.out 2>&1 &
     echo $! > {{ purge_device_pid_file }}
-  changed_when: True
+  register: hdparm_res
+  changed_when: hdparm_res is not skipped and hdparm_res.rc == 0
   when: blkdiscard_res.rc != 0
 ...
