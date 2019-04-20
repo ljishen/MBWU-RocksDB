@@ -10,16 +10,15 @@
 # This task wait until the related PID does not exist.
 - name: ({{ notes }}) wait until the process is finished
   shell: |
-    if pgrep --pidfile {{ pid_file }}; then
+    if pgrep --pidfile {{ pid_file }} &> /dev/null; then
         exit 1
     else
         rm --force {{ pid_file }}
     fi
   ignore_errors: yes
-  register: result
-  until: result.rc == 0
+  register: wait_res
+  until: wait_res.rc == 0
   retries: "{{ (single_task_wait_duration | int) // (delay | int) }}"
   delay: "{{ delay }}"
-  changed_when: True
-  when: stat_res.stat.isreg is defined and stat_res.stat.isreg
+  changed_when: stat_res.stat.isreg is defined and stat_res.stat.isreg and wait_res.rc == 0
 ...
