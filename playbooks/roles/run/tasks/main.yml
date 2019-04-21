@@ -84,12 +84,14 @@
 
     - name: delete remnant data files (rocskdb hosts)
       command: find {{ remote_data_dir }} -type f -delete
+      ignore_errors: yes  # multiple hosts can be the same physical machine
 
     - name: delete remnant data files (storage hosts)
       command: find {{ remote_data_dir }} -type f -delete
       delegate_to: "{{ item }}"
       loop: "{{ groups['storage'] }}"
       run_once: yes
+      ignore_errors: yes  # multiple hosts can be the same physical machine
 
     - name: delete remnant data files (local for storage hosts)
       file:
