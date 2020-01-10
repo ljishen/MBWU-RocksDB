@@ -1,0 +1,12 @@
+---
+- name: stop performance statistics
+  shell: |
+    pkill --signal {{ stat['stop_signal'] }} --pidfile {{ sys_usage_pid_file }}
+    rm --force {{ sys_usage_pid_file }}
+  vars:
+    performance_stat_name: "{{ stat['name'] }}"
+  loop: '{{ performance_stats }}'
+  loop_control:
+    loop_var: stat
+  register: comm_res
+  changed_when: comm_res.rc == 0

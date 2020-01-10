@@ -2,11 +2,10 @@
 - name: ({{ notes }}) save stats of devices to files
   copy:
     backup: no
-    content: "{{ item.stdout }}"
-    dest: "{{ remote_device_stats_file }}"
+    content: "{{ item['stdout'] }}"
+    dest: '{{ remote_device_stats_file }}'
     force: yes
-    owner: "{{ ansible_user }}"
+    owner: '{{ ansible_user }}'
   vars:
-    device_name: "{{ item.device_name }}"
+    device_name: "{{ item['device_name'] }}"
   loop: "{{ dev_stats_res['results'] }}"
-...

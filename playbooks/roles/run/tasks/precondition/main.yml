@@ -8,8 +8,7 @@
   include_tasks: run_tasks_on_host_devices.yml
   vars:
     tasks_filename: wait_single_async_task.yml
-    pid_file: "{{ purge_device_pid_file }}"
-    delay: "{{ retry_delay_30_secs }}"
+    pid_file: '{{ purge_device_pid_file }}'
   loop: "{{ groups['storage'] }}"
 
 - include_tasks: run_tasks_on_host_devices.yml
@@ -17,19 +16,17 @@
     tasks_filename: run_wipc.yml
   loop: "{{ groups['storage'] }}"
 
-- name: ({{ notes }}) check wipc status
+- name: ({{ notes }}) wait wipc to finish
   include_tasks: run_tasks_on_host_devices.yml
   vars:
     tasks_filename: wait_single_async_task.yml
-    pid_file: "{{ wipc_pid_file }}"
-    delay: "{{ retry_delay_30_secs }}"
+    pid_file: '{{ wipc_pid_file }}'
   loop: "{{ groups['storage'] }}"
 
 - name: ({{ notes }}) backup wipc outputs
   include_tasks: run_tasks_on_host_devices.yml
   vars:
     tasks_filename: backup_file.yml
-    local_file: "{{ local_wipc_output_file }}"
-    remote_file: "{{ remote_wipc_output_file }}"
+    local_file: '{{ local_wipc_output_file }}'
+    remote_file: '{{ remote_wipc_output_file }}'
   loop: "{{ groups['storage'] }}"
-...

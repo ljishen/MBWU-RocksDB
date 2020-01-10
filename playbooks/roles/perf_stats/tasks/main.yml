@@ -1,0 +1,2 @@
+---
+- include_tasks: '{{ stat_action }}.yml'

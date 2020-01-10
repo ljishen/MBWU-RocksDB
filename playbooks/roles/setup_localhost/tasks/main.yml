@@ -1,0 +1,75 @@
+---
+- include_tasks: create_base_dirs.yml
+- include_tasks: create_dirs.yml
+
+- name: copy user-defined workload parameter file to {{ local_tmp_data_dir }}
+  copy:
+    backup: yes
+    dest: '{{ local_tmp_data_dir }}/{{ workload_name }}'
+    force: yes
+    owner: '{{ ansible_user }}'
+    remote_src: no
+    src: '{{ ycsb_workload }}'
+  when: ycsb_workload not in core_workloads
+
+- name: generate YCSB workload parameter file
+  template:
+    backup: yes
+    dest: '{{ ycsb_workload_file }}'
+    force: yes
+    owner: '{{ ansible_user }}'
+    src: '{{ local_tmp_data_dir }}/{{ workload_name }}'
+
+- name: append common properties to the workload parameter file
+  blockinfile:
+    backup: no
+    block: "{{ lookup('template', 'common') }}"
+    create: no
+    insertafter: EOF
+    owner: '{{ ansible_user }}'
+    path: '{{ ycsb_workload_file }}'
+    state: present
+
+- name: install dependent apt packages
+  become: yes
+  apt:
+    cache_valid_time: '{{ 60 * 60 * 24 }}' # cache is valid in a day
+    install_recommends: no
+    name:
+      - tar
+      - git
+      - rsync
+      - sysstat
+      - python3-numpy
+      - ntp
+    state: present
+    update_cache: yes
+
+- name: install JDK and Maven
+  import_tasks: install_jdk_maven.yml
+
+- name: download required scripts
+  get_url:
+    backup: no
+    dest: "{{ scripts_dir }}/{{ item['filename'] }}"
+    force: yes
+    mode: u+rx
+    owner: '{{ ansible_user }}'
+    url: "{{ item['url'] }}"
+  loop:
+    - {
+        filename: '{{ verify_steady_state_script_filename }}',
+        url: 'https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/python/performance/{{ verify_steady_state_script_filename }}',
+      }
+    - {
+        filename: '{{ enable_cpufreq_governor_script_filename }}',
+        url: 'https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/bash/processor/{{ enable_cpufreq_governor_script_filename }}',
+      }
+
+- name: config scaling governor for online CPUs
+  become: yes
+  script: '{{ scripts_dir }}/{{ enable_cpufreq_governor_script_filename }} performance'
+  register: cpu_config_res
+  changed_when: cpu_config_res.rc == 0
+  delegate_to: '{{ item }}'
+  loop: "{{ groups['all'] }}"

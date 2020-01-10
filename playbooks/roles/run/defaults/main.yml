@@ -1,99 +1,28 @@
 ---
-fio_bin: "{{ fio_dir }}/fio"
-
-rocksdb_data_dir: "{{ device_mountpoint }}/{{ rocksdb_data_dirname }}"
-
-# Since the YCSB RocksDB binding just combines all the fields into a single
-# byte array as the value. Reducing the field counts helps to free up more CPU
-# resources for the I/O path.
-fieldcount: 1
-
 # (DO NOT CHANGE) Use the last x number of values for steady state detection.
 measurement_window_size: 3
 
-perf_stats_report_interval_in_secs: 3
-
-single_task_wait_duration: "{{ 60 * 60 * 12 }}"
-retry_delay_30_secs: 30
-
-local_output_inventory: "{{ inventory_dir }}/analysis/data/ycsb/{{ current_host | default(inventory_hostname) }}"
-local_output_dir: "{{ local_output_inventory }}/{{ device_name }}/output_{{ cur_workload }}"
-remote_output_dir: "{{ remote_device_data_dir }}/output_{{ cur_workload }}"
-
-local_rocksdb_log_file: "{{ local_output_dir }}/LOG_{{ phase }}_round{{ cur_round }}"
-
-rocksdb_remote_input_options_file: "{{ remote_output_dir }}/{{ rocksdb_options_file | basename }}"
-
-device_id_info_filename: device_id_info
-remote_device_id_info_file: "{{ remote_output_dir }}/{{ device_id_info_filename }}"
-local_device_id_info_file: "{{ local_output_dir }}/{{ device_id_info_filename }}"
-
-io_accounting_script_filename: io_accounting.sh
-
-wipc_job_filename: wipc.fio
-remote_wipc_job_file: "{{ remote_output_dir }}/{{ wipc_job_filename }}"
-local_wipc_job_file: "{{ local_output_dir }}/{{ wipc_job_filename }}"
+local_rocksdb_log_file: '{{ local_output_device_dir }}/RocksDB_LOG_{{ phase }}_round{{ cur_round }}'
 
 wipc_output_filename: wipc_round{{ cur_round }}.json
-local_wipc_output_file: "{{ local_output_dir }}/{{ wipc_output_filename }}"
-remote_wipc_output_file: "{{ remote_output_dir }}/{{ wipc_output_filename }}"
+local_wipc_output_file: '{{ local_output_device_dir }}/{{ wipc_output_filename }}'
+remote_wipc_output_file: '{{ remote_output_device_dir }}/{{ wipc_output_filename }}'
 
-ycsb_workload_file: "{{ local_output_dir }}/{{ cur_workload }}"
+ycsb_load_filename: 'ycsb_load@{{ inventory_hostname }}:{{ device_name }}_round{{ cur_round }}.dat'
+ycsb_load_output_file: '{{ local_output_dir }}/{{ ycsb_load_filename }}'
 
-ycsb_load_filename: "load_round{{ cur_round }}.dat"
-ycsb_load_output_file: "{{ local_output_dir }}/{{ ycsb_load_filename }}"
+ycsb_transactions_filename: 'ycsb_transactions@{{ inventory_hostname }}:{{ device_name }}_round{{ cur_round }}.dat'
+ycsb_transactions_output_file: '{{ local_output_dir }}/{{ ycsb_transactions_filename }}'
 
-ycsb_transactions_filename: "transactions_round{{ cur_round }}.dat"
-ycsb_transactions_output_file: "{{ local_output_dir }}/{{ ycsb_transactions_filename }}"
+io_accounting_filename: 'io_accounting_round{{ cur_round }}.log'
+local_io_accounting_file: '{{ local_output_device_dir }}/{{ io_accounting_filename }}'
+remote_io_accounting_file: '{{ remote_output_device_dir }}/{{ io_accounting_filename }}'
 
-local_sys_usage_info_dir: "{{ local_output_dir }}/sys_usage"
-remote_sys_usage_info_dir: "{{ remote_output_dir }}/sys_usage"
+# flag 'b' stands for the stats before executing the workload
+# flag 'a' stands for the stats after executing the workload
+device_stats_filename: 'device_stats_round{{ cur_round }}_{{ flag }}.log'
 
-ycsb_sys_usage_info_dir: "{{ local_sys_usage_info_dir }}/ycsb"
-rocksdb_sys_usage_info_dir: "{{ remote_sys_usage_info_dir }}/rocksdb"
-storage_sys_usage_info_dir: "{{ remote_sys_usage_info_dir }}/storage"
-local_storage_sys_usage_info_dir: "{{ local_sys_usage_info_dir }}/storage"
+local_device_stats_file: '{{ local_output_device_dir }}/{{ device_stats_filename }}'
+remote_device_stats_file: '{{ remote_output_device_dir }}/{{ device_stats_filename }}'
 
-# Performance monitoring tools
-performance_stats:
-    - { name: cpustat,
-        command: "mpstat -P ALL {{ perf_stats_report_interval_in_secs }}",
-        signal: SIGINT
-      }
-      # we may need to check the values of si and so. Because if these numbers are non-zero, you’re out of memory.
-    - { name: memstat,
-        command: "vmstat --one-header --wide --unit K --timestamp {{ perf_stats_report_interval_in_secs }}",
-        signal: SIGTERM
-      }
-    - { name: iostat,
-        command: "iostat -dktxyzH -g {{ device_name }} {{ device_fullname }} {{ perf_stats_report_interval_in_secs }}",
-        signal: SIGTERM
-      }
-    - { name: pidstat,
-        command: "pidstat -G java -ult {{ perf_stats_report_interval_in_secs }}",
-        signal: SIGINT
-      }
-    - { name: netstat,
-        command: "sar -n DEV {{ perf_stats_report_interval_in_secs }}",
-        signal: SIGINT
-      }
-
-# two options for variable sys_usage_pid_files_dir:
-  # remote_pid_files_dir
-  # local_pid_files_dir
-sys_usage_pid_file: "{{ sys_usage_pid_files_dir }}/{{ performance_stat_name }}.pid"
-
-# two options for variable sys_usage_log_files_dir:
-  # rocksdb_sys_usage_info_dir
-  # ycsb_sys_usage_info_dir
-sys_usage_log_file: "{{ sys_usage_log_files_dir }}/{{ performance_stat_name }}.log"
-
-purge_device_pid_file: "{{ remote_pid_files_dir }}/purge_device.pid"
-wipc_pid_file: "{{ remote_pid_files_dir }}/wipc.pid"
-rocksdb_pid_file: "{{ remote_pid_files_dir }}/rocksdb.pid"
-ycsb_load_pid_file: "{{ local_pid_files_dir }}/ycsb_load.pid"
-ycsb_transactions_pid_file: "{{ local_pid_files_dir }}/ycsb_transactions.pid"
-
-io_accounting_filename: "io_accounting_round{{ cur_round }}.log"
-local_io_accounting_file: "{{ local_output_dir }}/{{ io_accounting_filename }}"
-remote_io_accounting_file: "{{ remote_output_dir }}/{{ io_accounting_filename }}"
+device_stats_command: grep {{ device_name }} /proc/diskstats

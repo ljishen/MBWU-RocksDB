@@ -1,0 +1,4 @@
+---
+device_id_info_filename: device_id_info
+remote_device_id_info_file: "{{ remote_output_device_dir }}/{{ device_id_info_filename }}"
+local_device_id_info_file: "{{ local_output_device_dir }}/{{ device_id_info_filename }}"

@@ -1,0 +1,47 @@
+---
+sys_usage_pid_file: '{{ pid_files_dir }}/{{ performance_stat_name }}@{{ inventory_hostname }}.pid'
+
+sys_usage_log_file: |-
+  {% if inventory_hostname in groups['rocksdb'] -%}
+      {% set sys_usage_info_dir = rocksdb_sys_usage_info_dir -%}
+  {% elif inventory_hostname in groups['storage'] -%}
+      {% set sys_usage_info_dir = storage_sys_usage_info_dir -%}
+  {% else -%}
+      {% set sys_usage_info_dir = ycsb_sys_usage_info_dir -%}
+  {% endif -%}
+  {{ sys_usage_info_dir }}/{{ performance_stat_name }}.log
+
+# Performance monitoring tools
+performance_stats: |-
+  {% set list = [
+      {
+        'name': 'mpstat',
+        'command': 'mpstat -P ALL ' ~ perf_stats_report_interval_in_secs,
+        'stop_signal': 'SIGINT',
+      },
+      {
+        'name': 'vmstat',
+        'command': 'vmstat --one-header --wide --unit K --timestamp ' ~ perf_stats_report_interval_in_secs,
+        'stop_signal': 'SIGTERM',
+      },
+      {
+        'name': 'pidstat',
+        'command': 'pidstat -G java -U -ult ' ~ perf_stats_report_interval_in_secs,
+        'stop_signal': 'SIGINT',
+      },
+      {
+        'name': 'netstat',
+        'command': 'sar -n DEV ' ~ perf_stats_report_interval_in_secs,
+        'stop_signal': 'SIGINT',
+      }]
+  -%}
+  {% if device_names is defined -%}
+      {% set list = list + [
+          {
+            'name': 'iostat',
+            'command': 'iostat -dktxyz -g ALL ' ~ device_names | join(' ') ~ ' ' ~ perf_stats_report_interval_in_secs,
+            'stop_signal': 'SIGTERM',
+          }]
+      -%}
+  {% endif -%}
+  {{ list }}

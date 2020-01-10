@@ -1,0 +1,137 @@
+---
+- include_tasks: create_base_dirs.yml
+- include_tasks: create_dirs.yml
+
+- name: install dependent apt packages
+  become: yes
+  apt:
+    cache_valid_time: '{{ 60 * 60 * 24 }}' # cache is valid in a day
+    install_recommends: no
+    name:
+      - tar
+      - rsync
+      - sysstat
+      - parted
+      - hdparm
+      - nvme-cli
+      - build-essential
+      - ntp
+    state: present
+    update_cache: yes
+
+- name: unmount filesystems for devices if necessary
+  become: yes
+  shell: |
+    set -o pipefail
+    ls {{ device_fullname }}* | xargs -n1 umount
+  args:
+    executable: /bin/bash
+  loop: '{{ device_fullnames }}'
+  loop_control:
+    loop_var: device_fullname
+  register: comm_res
+  changed_when: comm_res.rc == 0
+  failed_when: False
+
+- name: read partition information of devices
+  become: yes
+  parted:
+    device: '{{ device_fullname }}'
+    state: info
+    unit: MiB
+  loop: '{{ device_fullnames }}'
+  loop_control:
+    loop_var: device_fullname
+  register: device_infos
+
+- name: remove all partitions from devices
+  become: yes
+  parted:
+    device: "{{ item[0]['disk']['dev'] }}"
+    number: "{{ item[1]['num'] }}"
+    state: absent
+  loop: "{{ device_infos['results'] | subelements('partitions', { 'skip_missing': true }) }}"
+
+- include_tasks: get_device_sizes.yml
+  vars:
+    device_name: '{{ device_fullname | basename }}'
+  loop: '{{ device_fullnames }}'
+  loop_control:
+    loop_var: device_fullname
+  when: load_data
+
+- name: check whether device rotational
+  shell: |
+    set -o pipefail
+    lsblk --noheadings --nodeps --output ROTA {{ device_fullname }} | tr -d '[:blank:]'
+  args:
+    executable: /bin/bash
+  loop: '{{ device_fullnames }}'
+  loop_control:
+    loop_var: device_fullname
+  register: rota_res
+  changed_when: False
+
+- name: store rotational fact
+  set_fact:
+    rota_of_device: >
+      {{ (rota_of_device | default({})) | combine({ item['device_fullname'] | basename : (item['stdout'] == '1') }) }}
+    rota_of_inventory: "{{ (rota_of_inventory | default(False)) or (item['stdout'] == '1') }}"
+  loop: "{{ rota_res['results'] }}"
+
+- block:
+    - name: download fio {{ fio_version }}
+      unarchive:
+        creates: '{{ fio_exec }}'
+        dest: '{{ software_dir }}'
+        keep_newer: no
+        owner: '{{ ansible_user }}'
+        remote_src: yes
+        src: https://codeload.github.com/axboe/fio/tar.gz/fio-{{ fio_version }}
+      register: unarchive_res
+
+    - name: compile fio
+      command: make -j {{ ansible_processor_vcpus }}
+      args:
+        chdir: '{{ fio_dir }}'
+        creates: '{{ fio_exec }}'
+      register: comm_res
+      changed_when: comm_res.rc == 0
+
+    - name: download discard sectors script
+      get_url:
+        backup: no
+        dest: '{{ scripts_dir }}/{{ discard_sectors_script_filename }}'
+        force: yes
+        mode: u+rx
+        owner: '{{ ansible_user }}'
+        url: https://raw.githubusercontent.com/ljishen/my-awesome-scripts/master/bash/storage/{{ discard_sectors_script_filename }}
+  when: load_data and not rota_of_inventory
+
+- include_tasks: save_device_id_info.yml
+  vars:
+    device_name: '{{ device_fullname | basename }}'
+  loop: '{{ device_fullnames }}'
+  loop_control:
+    loop_var: device_fullname
+
+- include_tasks: deploy_wipc_job_file.yml
+  vars:
+    device_name: '{{ device_fullname | basename }}'
+  when: load_data and not rota_of_device[device_name]
+  loop: '{{ device_fullnames }}'
+  loop_control:
+    loop_var: device_fullname
+
+- name: kill remnant processes
+  become: yes
+  shell: |
+    {% for pid_file in [purge_device_pid_file, wipc_pid_file] -%}
+        pkill --signal SIGTERM --pidfile {{ pid_file }}
+        rm --force {{ pid_file }}
+    {% endfor -%}
+  loop: '{{ device_names }}'
+  loop_control:
+    loop_var: device_name
+  register: comm_res
+  changed_when: comm_res.rc == 0

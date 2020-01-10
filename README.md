@@ -3,9 +3,14 @@
 Ansible Playbook for Running YCSB on RocksDB RMI Server over Disaggregated Storage Devices.
 
 
-## Requirements on Control Machine
+## Requirements
 
-- `ansible >= 2.7.9`
+- Control Node
+  - ansible >= 2.7.9
+  - python-apt or python3-apt or aptitude
+
+- Managed Nodes ([rocksdb, storage])
+  - python-apt or python3-apt or aptitude
 
 
 ## Usage
@@ -24,20 +29,20 @@ ansible-playbook playbooks/main.yml [-v]
 
 # Extra Variables:
 #   - rocksdb_options_file:
-#       This is the path of the RockDB options file. By default, it is the
-#       {{ playbook_dir }}/roles/run/templates/OPTIONS
-#   - ycsb_run_workloads:
-#       This is the paths of a list of the YCSB workload parameter files
-#       separated by comma. Each of them could be any of the YCSB core
-#       workload[a-f], or the absolute path of a user-defined workload
-#       parameter file. By default, it is the
-#       {{ playbook_dir }}/roles/run/templates/myworkloada
+#       This is the path of the RockDB options file.
+#       The default value is:
+#       {{ playbook_dir }}/templates/OPTIONS
+#   - ycsb_workload:
+#       This variable accepts the name of a YCSB core workload
+#       ("workloada" to "workloadf") or an user-defined workload.
+#       The default value is:
+#       {{ playbook_dir }}/templates/myworkloada
 #
 # Options:
 #   -v  Show debug messages while running playbook
 #
 # For example:
 # $ ansible-playbook playbooks/main.yml -v \
-#       --extra-vars "ycsb_run_workloads=workloadc,/path/to/workload1,/path/to/workload2 rocksdb_options_file=/path/to/optionsfile"
+#       --extra-vars "ycsb_workload=/path/to/your/ycsb/workload rocksdb_options_file=/path/to/your/optionsfile"
 #
 ```

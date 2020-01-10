@@ -1,52 +1,129 @@
 ---
-- hosts: all
+- hosts: localhost
   tasks:
     - name: check if rocksdb and storage hosts are specified
-      debug:
+      fail:
         msg: Please specify {{ item }} hosts.
       when: not groups[item]
-      failed_when: not groups[item]
       loop: ['rocksdb', 'storage']
-      run_once: yes
+
+    - name: retrieve the stats of user-defined workload parameter files
+      stat:
+        follow: yes
+        get_attributes: no
+        get_checksum: no
+        get_mime: no
+        path: '{{ ycsb_workload }}'
+      when: ycsb_workload not in core_workloads
+      register: stat_res
+
+    - name: verify the paths of user-defined workload parameter files
+      fail:
+        msg: >
+          Please verify the path of the workload parameter file {{ stat_res['stat']['path'] }}
+      when: stat_res.stat.isreg is not defined or not stat_res.stat.isreg
+
+    - name: set workload name
+      set_fact:
+        workload_name: '{{ ycsb_workload | basename }}'
+      delegate_to: '{{ item }}'
+      delegate_facts: True
+      loop: "{{ groups['all'] }}"
+
+- hosts: rocksdb
+  tasks:
+    - name: check whether variable init_devices is valid
+      fail:
+        msg: >
+          Host {{ inventory_hostname }} does not have value for init_devices.
+      when: init_devices is not defined or not init_devices
+
+    - name: check whether the number of devics and the number of RMI ports is the same
+      fail:
+        msg: >
+          The number of devices is different from the number of RMI ports
+          specified for host {{ inventory_hostname }}
+      when: init_devices | length != rmi_ports | length
+
+    - name: set fact for device names
+      set_fact:
+        device_names: '{{ init_devices }}'
+
+    - name: get machine id
+      command: cat /etc/machine-id
+      register: comm_machine_id
+      changed_when: False
+
+    - name: save machine id
+      set_fact:
+        rocksdb_machine_ids: "{{ rocksdb_machine_ids | default({}) | combine({comm_machine_id['stdout']: inventory_hostname}) }}"
+      delegate_to: localhost
+      delegate_facts: True
 
     - block:
-        - name: check whether variable init_devices is valid
-          debug:
+        - name: check the validity of RocksDB data dirs
+          stat:
+            follow: yes
+            path: '{{ rocksdb_data_dir }}/CURRENT'
+          loop: '{{ device_names }}'
+          loop_control:
+            loop_var: device_name
+          register: stat_res
+
+        - name: show error message
+          fail:
             msg: >
-              Host {{ inventory_hostname }} does not have value for init_devices.
-          when: init_devices is not defined or not init_devices
-          failed_when: init_devices is not defined or not init_devices
+              RocksDB data dir {{ item['invocation']['module_args']['path'] | dirname }} does not contain valid data!
+              You will need to load the data first.
+          when: item.stat.isreg is not defined or not item.stat.isreg
+          loop: "{{ stat_res['results'] }}"
+      when: not load_data
 
-        - name: collect the name of all devices on the initiator server
-          set_fact:
-            device_names: "{{ init_devices.split(',') }}"
+- hosts: storage
+  tasks:
+    - name: check whether the variable target_devices is valid
+      fail:
+        msg: >
+          Host {{ inventory_hostname }} does not have value for target_devices.
+      when: target_devices is not defined or not target_devices
 
-        - name: check whether the number of devics and the number of RMI ports is the same
-          debug:
-            msg: >
-              The number of devices is different from the number of RMI ports
-              specified for host {{ inventory_hostname }}
-          when: device_names | length != rmi_ports | length
-          failed_when: device_names | length != rmi_ports | length
-      when: inventory_hostname in groups['rocksdb']
+    - name: set fact for device names
+      set_fact:
+        device_names: '{{ target_devices }}'
 
-    - block:
-        - name: check whether variable target_devices is valid
-          debug:
-            msg: >
-              Host {{ inventory_hostname }} does not have value for target_devices.
-          when: target_devices is not defined or not target_devices
-          failed_when: target_devices is not defined or not target_devices
+    - name: get machine id
+      command: cat /etc/machine-id
+      register: comm_machine_id
+      changed_when: False
 
-        - name: collect the name of all devices on the target server
-          set_fact:
-            device_names: "{{ target_devices.split(',') }}"
-      when: inventory_hostname in groups['storage']
+    - name: save machine id
+      set_fact:
+        storage_machine_ids: "{{ storage_machine_ids | default({}) | combine({comm_machine_id['stdout']: inventory_hostname}) }}"
+      delegate_to: localhost
+      delegate_facts: True
 
+- hosts: localhost
+  tasks:
+    - name: verify device consistency
+      fail:
+        msg: >
+          {{ item['value'] }} in rocksdb group and {{ storage_machine_ids[item['key']] }} in storage group are the same host,
+          but the init_devices ({{ hostvars[item['value']]['init_devices'] }}) of {{ item['value'] }}:rocksdb
+          are different from the target_devices ({{ hostvars[storage_machine_ids[item['key']]]['target_devices'] }})
+          of {{ storage_machine_ids[item['key']] }}:storage
+      when: >
+        item['key'] in storage_machine_ids and
+        hostvars[storage_machine_ids[item['key']]]['target_devices'] | symmetric_difference(hostvars[item['value']]['init_devices']) | length > 0
+      loop: '{{ rocksdb_machine_ids | dict2items }}'
+
+- hosts:
+    - rocksdb
+    - storage
+  tasks:
     - name: get the fullnames of test devices
       set_fact:
         device_fullnames: "{{ device_fullnames | default([]) + [ '/dev/' ~ item ] }}"
-      loop: "{{ device_names }}"
+      loop: '{{ device_names }}'
 
     - name: retrieve the stat of block devices
       stat:
@@ -55,20 +132,19 @@
         get_checksum: no
         get_md5: no
         get_mime: no
-        path: "{{ device_fullname }}"
-      loop: "{{ device_fullnames }}"
+        path: '{{ device_fullname }}'
+      loop: '{{ device_fullnames }}'
       loop_control:
         loop_var: device_fullname
       register: stat_res
 
     - name: verify the existence of block devices
-      debug:
+      fail:
         msg: >
-          Cannot find the storage device {{ item.device_fullname }}
+          Cannot find the storage device {{ item['device_fullname'] }}
           on host {{ inventory_hostname }}
       when: item.stat.isblk is not defined or not item.stat.isblk
-      failed_when: item.stat.isblk is not defined or not item.stat.isblk
-      loop: "{{ stat_res.results }}"
+      loop: "{{ stat_res['results'] }}"
 
     - name: read parent device names
       shell: |
@@ -76,72 +152,117 @@
         lsblk --noheadings --paths --output PKNAME {{ device_fullname }} | tail -1
       args:
         executable: /bin/bash
-      loop: "{{ device_fullnames }}"
+      loop: '{{ device_fullnames }}'
       loop_control:
         loop_var: device_fullname
       register: parent_devices
       changed_when: False
 
     - name: check if devices are parent devices
-      debug:
+      fail:
         msg: >
-          Host {{ inventory_hostname }} specifies a storage device {{ item.device_fullname }}
+          Host {{ inventory_hostname }} specifies a storage device {{ item['device_fullname'] }}
           which is not a parent device.
       when: item.stdout and item.stdout != item.device_fullname
-      failed_when: item.stdout and item.stdout != item.device_fullname
-      loop: "{{ parent_devices.results }}"
+      loop: "{{ parent_devices['results'] }}"
 
-    - block:
-        - name: read partition information of devices
-          become: yes
-          parted:
-            device: "{{ device_fullname }}"
-            state: info
-            unit: MiB
-          loop: "{{ device_fullnames }}"
-          loop_control:
-            loop_var: device_fullname
-          register: device_infos
-
-        - name: remove all partitions from devices
-          become: yes
-          parted:
-            device: "{{ item.0.disk.dev }}"
-            number: "{{ item.1.num }}"
-            state: absent
-          loop: "{{ device_infos.results | subelements('partitions', { 'skip_missing': true }) }}"
-      when: inventory_hostname in groups['storage']
-
-    - name: collect run workloads
-      set_fact:
-        run_workloads: "{{ ycsb_run_workloads.split(',') }}"
-
-    - block:
-        - name: retrieve the stats of user-defined workload parameter files
-          stat:
-            follow: yes
-            get_attributes: no
-            path: "{{ workload }}"
-          loop: "{{ run_workloads }}"
-          loop_control:
-            loop_var: workload
-          when: workload not in core_workloads
-          register: stat_res
-
-        - name: verify the paths of user-defined workload parameter files
-          debug:
-            msg: >
-              Please verify the path of the workload parameter file {{ item.workload }}
-          when: item.stat.isreg is not defined or not item.stat.isreg
-          failed_when: item.stat.isreg is not defined or not item.stat.isreg
-          loop: "{{ stat_res.results }}"
-      delegate_to: localhost
-      run_once: yes
+- hosts: localhost
+  tasks:
+    - name: check remnant output files
+      stat:
+        get_attributes: no
+        get_checksum: no
+        get_mime: no
+        path: '{{ local_output_dir | dirname }}'
+      register: remnant_output
 
 - hosts: all
-  serial: 1
-  roles: [setup]
+  tasks:
+    - block:
+        - name: confirm to delete remnant output files
+          pause:
+            prompt: >
+              Found remnant output files from previous run!
+              Do you want to delete those files and continue (yes/no)?
+            echo: yes
+          register: confirm_res
+          failed_when: confirm_res.user_input not in ["yes", "YES", "y", "Y"]
+
+        - name: delete remnant output files from rocskdb host
+          file:
+            path: '{{ remote_output_dir }}'
+            state: absent
+          when: inventory_hostname in groups['rocksdb']
+
+        - name: delete remnant output files from storage host
+          file:
+            path: '{{ remote_output_dir }}'
+            state: absent
+          when: inventory_hostname in groups['storage']
+
+        - name: delete remnant output files from localhost
+          file:
+            path: '{{ local_output_dir }}'
+            state: absent
+      when: >
+        hostvars['localhost']['remnant_output']['stat']['isdir'] is defined and
+        hostvars['localhost']['remnant_output']['stat']['isdir']
+
+- hosts: rocksdb
+  roles: [setup_rocksdb]
+
+- hosts: storage
+  roles: [setup_storage]
+
+- hosts: localhost
+  roles: [setup_localhost]
+
+- hosts: all
+  pre_tasks:
+    - name: synchronize time with npt
+      become: yes
+      command: |
+        service ntp stop
+        ntpd -gq
+        service ntp start
+      register: comm_res
+      changed_when: comm_res.rc == 0
+
+  roles:
+    - role: perf_stats
+      vars:
+        stat_action: stop
+    - role: perf_stats
+      vars:
+        stat_action: start
 
 - hosts: rocksdb
   roles: [run]
-...
+
+- hosts: all
+  roles:
+    - role: perf_stats
+      vars:
+        stat_action: stop
+
+- hosts: rocksdb
+  tasks:
+    - name: fetch system usage info
+      synchronize:
+        delete: yes
+        dest: '{{ local_sys_usage_info_dir }}'
+        mode: pull
+        recursive: yes
+        src: '{{ rocksdb_sys_usage_info_dir }}'
+        times: yes
+
+- hosts: storage
+  tasks:
+    - name: fetch system usage info
+      synchronize:
+        delete: yes
+        dest: '{{ local_sys_usage_info_dir }}'
+        mode: pull
+        recursive: yes
+        src: '{{ storage_sys_usage_info_dir }}'
+        times: yes

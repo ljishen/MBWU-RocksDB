@@ -1,0 +1,24 @@
+---
+- name: request identification info of devices (using nvme-cli)
+  become: yes
+  shell: |
+    nvme id-ctrl --human-readable {{ device_fullname }} > {{ remote_device_id_info_file }}
+    printf '\n\n' >> {{ remote_device_id_info_file }}
+    nvme smart-log {{ device_fullname }} >> {{ remote_device_id_info_file }}
+    printf '\n\n' >> {{ remote_device_id_info_file }}
+    nvme smart-log-add {{ device_fullname }} >> {{ remote_device_id_info_file }}
+  when: device_name is match('^nvme')
+  register: nvmecli_res
+  changed_when: False
+
+- name: request identification info of devices (using hdparm)
+  become: yes
+  shell: >
+    hdparm -I {{ device_fullname }} > {{ remote_device_id_info_file }}
+  when: nvmecli_res is skipped
+  changed_when: False
+
+- include_tasks: backup_file.yml
+  vars:
+    local_file: '{{ local_device_id_info_file }}'
+    remote_file: '{{ remote_device_id_info_file }}'

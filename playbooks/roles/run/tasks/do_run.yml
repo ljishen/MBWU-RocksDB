@@ -1,14 +1,11 @@
 ---
 - block:
-
     - include_tasks: load_data.yml
-      vars:
-        phase: load
-      when: cur_load_data
+      when: load_data
 
     - name: ({{ notes }}) update the fact of load data
       set_fact:
-        cur_load_data: False
+        load_data: False
       when: load_data_once
 
     - include_tasks: rocksdb_rmi_server/start.yml
@@ -20,8 +17,8 @@
     - name: ({{ notes }}) get the stats of devices (before)
       # We don't want to interfere the stats of the block device so just not to
       # write the result directly to file here.
-      command: "{{ device_stats_command }}"
-      loop: "{{ device_names }}"
+      command: '{{ device_stats_command }}'
+      loop: '{{ device_names }}'
       loop_control:
         loop_var: device_name
       changed_when: False
@@ -29,46 +26,51 @@
 
     - name: ({{ notes }}) record IO accounting information for RocksDB RMI processes
       become: yes
-      shell: >
-        nohup {{ scripts_dir }}/{{ io_accounting_script_filename }}
-        {{ rocksdb_pid_file }}
-        {{ remote_io_accounting_file }}
-        {{ perf_stats_report_interval_in_secs }}
-        < /dev/null > {{ remote_nohup_output_dir }}/io_accounting_nohup.out 2>&1 &
-      loop: "{{ device_names }}"
+      shell: |
+        nohup stdbuf -oL -eL \
+            {{ scripts_dir }}/{{ io_accounting_script_filename }} \
+            {{ rocksdb_pid_file }} \
+            {{ remote_io_accounting_file }} \
+            {{ perf_stats_report_interval_in_secs }} \
+            < /dev/null \
+            > {{ remote_nohup_output_dir }}/io_accounting.nohup 2>&1 &
+      loop: '{{ device_names }}'
       loop_control:
         loop_var: device_name
 
     - block:
-        - name: ({{ notes }}) execute workload on remote devices in the background
-          shell: >
-            nohup stdbuf -oL -eL
-            bin/ycsb run rocksdb -s
-            -P {{ ycsb_workload_file }}
-            -p rocksdb.dir={{ rocksdb_data_dir }}
-            -p registry.port={{ rmi_ports[loop_idx] }}
-            -p registry.host={{ inventory_hostname }}
-            < /dev/null > {{ ycsb_transactions_output_file }} 2>&1 &
+        - name: ({{ notes }}) start YCSB transactions phase in the background
+          vars:
+            result_from_local: True
+          shell: |
+            nohup stdbuf -oL -eL \
+                bin/ycsb run rocksdb -s \
+                -P {{ ycsb_workload_file }} \
+                -p rocksdb.dir={{ rocksdb_data_dir }} \
+                -p rocksdb.registryport={{ rmi_ports[loop_idx] }} \
+                -p rocksdb.registryhost={{ ansible_host }} \
+                < /dev/null \
+                > {{ ycsb_transactions_output_file }} 2>&1 &
           args:
-            chdir: "{{ ycsb_dir }}"
+            chdir: '{{ ycsb_dir }}'
           environment:
-            PATH: "{{ maven_dir }}/bin:{{ ansible_env.PATH }}"
-          loop: "{{ device_names }}"
+            PATH: "{{ maven_dir }}/bin:{{ ansible_env['PATH'] }}"
+          loop: '{{ device_names }}'
           loop_control:
             loop_var: device_name
             index_var: loop_idx
-          changed_when: True
+          register: comm_res
+          changed_when: comm_res.rc == 0
 
         - include_tasks: save_ycsb_pids.yml
           vars:
-            ycsb_pid_file: "{{ ycsb_transactions_pid_file }}"
+            ycsb_pid_file: '{{ ycsb_transactions_pid_file }}'
 
-        - name: ({{ notes }}) check YCSB transactions status
+        - name: ({{ notes }}) wait YCSB transactions phase to finish
           include_tasks: wait_single_async_task.yml
           vars:
-            pid_file: "{{ ycsb_transactions_pid_file }}"
-            delay: "{{ retry_delay_30_secs }}"
-          loop: "{{ device_names }}"
+            pid_file: '{{ ycsb_transactions_pid_file }}'
+          loop: '{{ device_names }}'
           loop_control:
             loop_var: device_name
       delegate_to: localhost
@@ -76,8 +78,8 @@
     - include_tasks: rocksdb_rmi_server/stop.yml
 
     - name: ({{ notes }}) get the stats of devices (after)
-      shell: "sync; {{ device_stats_command }}"
-      loop: "{{ device_names }}"
+      shell: 'sync && {{ device_stats_command }}'
+      loop: '{{ device_names }}'
       loop_control:
         loop_var: device_name
       register: after_stats_res
@@ -86,44 +88,44 @@
       include_tasks: save_dev_stats.yml
       vars:
         flag: b
-        dev_stats_res: "{{ before_stats_res }}"
+        dev_stats_res: '{{ before_stats_res }}'
 
     - name: ({{ notes }}) save after stats of devices to files
       include_tasks: save_dev_stats.yml
       vars:
         flag: a
-        dev_stats_res: "{{ after_stats_res }}"
+        dev_stats_res: '{{ after_stats_res }}'
 
     - include_tasks: backup_file.yml
       vars:
-        flag: "{{ item[0] }}"
-        device_name: "{{ item[1] }}"
-        local_file: "{{ local_device_stats_file }}"
-        remote_file: "{{ remote_device_stats_file }}"
+        flag: '{{ item[0] }}'
+        device_name: '{{ item[1] }}'
+        local_file: '{{ local_device_stats_file }}'
+        remote_file: '{{ remote_device_stats_file }}'
       loop: "{{ [ 'b', 'a' ] | product(device_names) | list }}"
 
     - name: ({{ notes }}) backup I/O accounting information logs
       include_tasks: backup_file.yml
       vars:
-        local_file: "{{ local_io_accounting_file }}"
-        remote_file: "{{ remote_io_accounting_file }}"
-      loop: "{{ device_names }}"
+        local_file: '{{ local_io_accounting_file }}'
+        remote_file: '{{ remote_io_accounting_file }}'
+      loop: '{{ device_names }}'
       loop_control:
         loop_var: device_name
 
     - name: ({{ notes }}) backup RocksDB log files
       include_tasks: backup_file.yml
       vars:
-        local_file: "{{ local_rocksdb_log_file }}"
-        remote_file: "{{ rocksdb_data_dir }}/LOG"
+        local_file: '{{ local_rocksdb_log_file }}'
+        remote_file: '{{ rocksdb_data_dir }}/LOG'
         phase: transactions
-      loop: "{{ device_names }}"
+      loop: '{{ device_names }}'
       loop_control:
         loop_var: device_name
 
     - name: ({{ notes }}) identify the latest RocksDB OPTIONS files
       shell: find {{ rocksdb_data_dir }} -name "OPTIONS-*" -type f | sort | tail -1
-      loop: "{{ device_names }}"
+      loop: '{{ device_names }}'
       loop_control:
         loop_var: device_name
       register: comm_res
@@ -131,15 +133,17 @@
     - name: ({{ notes }}) backup RocksDB OPTIONS files
       include_tasks: backup_file.yml
       vars:
-        device_name: "{{ item.device_name }}"
-        local_file: "{{ local_output_dir }}/OPTIONS"
-        remote_file: "{{ item.stdout }}"
-      loop: "{{ comm_res.results }}"
+        device_name: "{{ item['device_name'] }}"
+        local_file: '{{ local_output_device_dir }}/OPTIONS'
+        remote_file: "{{ item['stdout'] }}"
+      loop: "{{ comm_res['results'] }}"
 
     - name: ({{ notes }}) extract throughputs from YCSB transactions outputs
       command: >
         grep -oP '\[OVERALL\],\s+Throughput\(ops/sec\),\s+\K[\d.]+' {{ ycsb_transactions_output_file }}
-      loop: "{{ device_names }}"
+      vars:
+        result_from_local: True
+      loop: '{{ device_names }}'
       loop_control:
         loop_var: device_name
       register: extract_res
@@ -157,21 +161,22 @@
                       {% endif -%}
                   {% endfor -%}
               {% endfor -%}
-              {{ hostvars['localhost']['tracking_values'] + [ throughputs | sum ] }}
+              {{ hostvars['localhost']['tracking_values'] | default([]) + [ throughputs | sum ] }}
 
         - name: ({{ notes }}) check steady state
           command: >
             {{ scripts_dir }}/{{ verify_steady_state_script_filename }}
-            '{{ hostvars['localhost']['tracking_values'] }}' {{ measurement_window_size }}
-          register: check_res
-          ignore_errors: yes
+                "{{ hostvars['localhost']['tracking_values'] }}" {{ measurement_window_size }}
+          register: steady_state_res
+          failed_when: False
 
         - name: ({{ notes }}) update loop condition
           set_fact:
-            steady_state: "{{ hostvars[inventory_hostname]['check_res']['rc'] == 0 }}"
+            # registerd variables cannot be delegated
+            #   https://github.com/ansible/ansible/pull/45432
+            steady_state: "{{ hostvars[inventory_hostname]['steady_state_res']['rc'] == 0 }}"
       delegate_to: localhost
       delegate_facts: True
       run_once: yes
 
-  when: not hostvars['localhost']['steady_state']
-...
+  when: hostvars['localhost']['steady_state'] is not defined or not hostvars['localhost']['steady_state']

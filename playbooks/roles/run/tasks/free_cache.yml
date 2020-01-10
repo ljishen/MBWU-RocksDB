@@ -3,5 +3,5 @@
   # See https://www.kernel.org/doc/Documentation/sysctl/vm.txt
   become: yes
   shell: sync; echo 3 > /proc/sys/vm/drop_caches
-  changed_when: True
-...
+  register: comm_res
+  changed_when: comm_res.rc == 0

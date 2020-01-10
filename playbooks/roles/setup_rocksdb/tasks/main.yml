@@ -1,0 +1,146 @@
+---
+- include_tasks: create_base_dirs.yml
+- include_tasks: create_dirs.yml
+
+- name: install dependent apt packages
+  become: yes
+  apt:
+    cache_valid_time: '{{ 60 * 60 * 24 }}' # cache is valid in a day
+    install_recommends: no
+    name:
+      - tar
+      - rsync
+      - sysstat
+      - xfsprogs
+      - ntp
+    state: present
+    update_cache: yes
+
+- name: install JDK and Maven
+  import_tasks: install_jdk_maven.yml
+
+- name: clone YCSB
+  git:
+    bare: no
+    clone: yes
+    dest: '{{ ycsb_dir }}'
+    force: yes
+    remote: origin
+    repo: https://github.com/ljishen/YCSB.git
+    update: yes
+    version: '{{ ycsb_version }}'
+  loop: '{{ device_names }}'
+  loop_control:
+    loop_var: device_name
+  delegate_to: localhost
+
+- name: fetch the core workload parameter files
+  fetch:
+    dest: '{{ local_tmp_data_dir }}/'
+    fail_on_missing: yes
+    flat: yes
+    src: '{{ ycsb_dir }}/workloads/{{ item }}'
+  vars:
+    device_name: '{{ device_names[0] }}'
+  loop: '{{ core_workloads }}'
+  delegate_to: localhost
+  run_once: yes
+
+- name: clone rocksdbjni-rmi
+  git:
+    bare: no
+    clone: yes
+    dest: '{{ rocksdbjni_rmi_dir }}'
+    force: yes
+    remote: origin
+    repo: https://github.com/ljishen/rocksdbjni-rmi.git
+    update: yes
+    version: '{{ rocksdbjni_rmi_version }}'
+  register: git_res
+
+- name: build rocksdbjni-rmi
+  command: mvn clean package
+  args:
+    chdir: '{{ rocksdbjni_rmi_dir }}'
+  environment:
+    PATH: "{{ maven_dir }}/bin:{{ ansible_env['PATH'] }}"
+  register: build_res
+  when: git_res.after != git_res.before
+  changed_when: build_res.rc == 0
+
+- name: stop RocksDB RMI servers
+  command: pkill -SIGTERM --full rocksdbjni-rmi-.+.jar
+  failed_when: False
+  register: comm_res
+  changed_when: comm_res.rc == 0
+
+- name: clean PID files of RocksDB RMI servers
+  file:
+    path: '{{ rocksdb_pid_file }}'
+    state: absent
+  loop: '{{ device_names }}'
+  loop_control:
+    loop_var: device_name
+
+- name: wait for related ports to be released
+  wait_for:
+    timeout: 20
+  when: comm_res.rc == 0
+
+- name: acquire processes running on the RMI ports
+  become: yes
+  command: lsof -i :{{ item }}
+  failed_when: False
+  loop: '{{ rmi_ports }}'
+  changed_when: False
+  register: comm_res
+
+- name: check whether the RMI ports are free
+  fail:
+    msg: >
+      Port {{ item['item'] }} is not free on host {{ inventory_hostname }}
+  when: item.rc == 0
+  loop: "{{ comm_res['results'] }}"
+
+- name: update the soft limit of nofile
+  become: yes
+  pam_limits:
+    domain: '{{ ansible_user }}'
+    limit_item: nofile
+    limit_type: soft
+    # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/5/html/tuning_and_optimizing_red_hat_enterprise_linux_for_oracle_9i_and_10g_databases/chap-oracle_9i_and_10g_tuning_guide-setting_shell_limits_for_the_oracle_user
+    value: 63536
+
+- name: copy the {{ io_accounting_script_filename }} script to the remote
+  copy:
+    backup: no
+    dest: '{{ scripts_dir }}/'
+    force: yes
+    mode: u+rx
+    src: '{{ io_accounting_script_filename }}'
+
+- name: deploy RocksDB options file
+  template:
+    backup: yes
+    dest: '{{ rocksdb_remote_input_options_file }}'
+    force: yes
+    owner: '{{ ansible_user }}'
+    src: '{{ rocksdb_options_file }}'
+  loop: '{{ device_names }}'
+  loop_control:
+    loop_var: device_name
+  when: load_data
+
+- name: kill remnant processes
+  become: yes
+  shell: |
+    {% for pid_file in [ycsb_load_pid_file, ycsb_transactions_pid_file] -%}
+        pkill --signal SIGTERM --pidfile {{ pid_file }}
+        rm --force {{ pid_file }}
+    {% endfor -%}
+  loop: '{{ device_names }}'
+  loop_control:
+    loop_var: device_name
+  register: comm_res
+  changed_when: comm_res.rc == 0
+  delegate_to: localhost

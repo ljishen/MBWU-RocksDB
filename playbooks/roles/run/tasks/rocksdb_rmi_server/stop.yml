@@ -1,9 +1,9 @@
 ---
 - name: ({{ notes }}) stop RocksDB RMI servers
-  shell: >
-    pkill -SIGTERM --pidfile {{ rocksdb_pid_file }}
-    && rm --force {{ rocksdb_pid_file }}
-  loop: "{{ device_names }}"
+  shell: |
+    pkill --signal SIGTERM --pidfile {{ rocksdb_pid_file }}
+    rm --force {{ rocksdb_pid_file }}
+  loop: '{{ device_names }}'
   loop_control:
     loop_var: device_name
   register: comm_res
@@ -14,5 +14,4 @@
     # The value of TCP_TIMEWAIT_LEN is hardwired to be 60s in the kernel.
     # Waiting for 2 minutes should be enough for releasing the ports.
     # https://support.hpe.com/hpsc/doc/public/display?docId=emr_na-c00916755
-    minutes: 2
-...
+    seconds: 20

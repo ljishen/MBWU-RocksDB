@@ -1,0 +1,15 @@
+{% include 'workloada' %}
+
+# YOU CAN OVERWITE ANY PARAMETERS OF WORKLOADA FROM HERE
+
+threadcount=1
+
+{% set db_size_gb = 40 -%}
+{% set db_capacity = db_size_gb * 1024 * 1024 * 1024 / (max_value_sz_bytes + key_sz_bytes) -%}
+
+# The database size is approximately {{ db_size_gb }} GB
+recordcount={{ db_capacity | int }}
+
+# The number of operations is the same as the recordcount
+operationcount={{ db_capacity | int }}
+

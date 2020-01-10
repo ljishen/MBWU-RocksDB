@@ -1,0 +1,28 @@
+---
+- name: ensure the presence of output device dir (for local backup)
+  become: yes
+  file:
+    owner: "{{ hostvars['localhost']['ansible_user'] }}"
+    path: '{{ local_output_device_dir }}'
+    state: directory
+  loop: '{{ device_names }}'
+  loop_control:
+    loop_var: device_name
+  delegate_to: localhost
+
+- name: ensure the presence of nohup output dir
+  become: yes
+  file:
+    owner: '{{ ansible_user }}'
+    path: '{{ remote_nohup_output_dir }}'
+    state: directory
+  loop: '{{ device_names }}'
+  loop_control:
+    loop_var: device_name
+
+- name: ensure the presence of sys usage info dir
+  become: yes
+  file:
+    owner: '{{ ansible_user }}'
+    path: '{{ storage_sys_usage_info_dir }}'
+    state: directory

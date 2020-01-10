@@ -1,17 +1,17 @@
 ---
 - name: ({{ notes }}) start RocksDB RMI servers
-  shell: >
-    nohup stdbuf -oL -eL
-    java -jar {{ rocksdbjni_rmi_jar_name }}
-    {{ rmi_ports[loop_idx] }} {{ inventory_hostname }}
-    < /dev/null >
-    {{ remote_nohup_output_dir }}/rocksdb-rmi_nohup_{{ phase }}_round{{ cur_round }}.out 2>&1 &
+  shell: |
+    nohup stdbuf -oL -eL \
+        java -jar rocksdbjni-rmi* \
+        {{ rmi_ports[loop_idx] }} {{ ansible_host }} \
+        < /dev/null \
+        > {{ remote_nohup_output_dir }}/rocksdb-rmi_{{ phase }}_round{{ cur_round }}.nohup 2>&1 &
     echo $! > {{ rocksdb_pid_file }}
   args:
-    chdir: "{{ rocksdbjni_rmi_dir }}/target"
-  loop: "{{ device_names }}"
+    chdir: '{{ rocksdbjni_rmi_dir }}/target'
+  loop: '{{ device_names }}'
   loop_control:
     loop_var: device_name
     index_var: loop_idx
-  changed_when: True
-...
+  register: comm_res
+  changed_when: comm_res.rc == 0

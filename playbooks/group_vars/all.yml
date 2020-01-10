@@ -1,0 +1,123 @@
+---
+maven_version: 3.6.3
+fio_version: 3.17
+ycsb_version: f9dbdaf872a4b09dddfba9932bb331a62731f883
+rocksdbjni_rmi_version: f81d27d47ba56ea858904f2b3113e12f7211033f
+
+workdir: /tmp/ycsb-rocksdb
+rocksdb_data_dirname: ycsb-rocksdb-data
+
+# This variable accepts the name of a YCSB core workload or
+# an user-defined workload.
+# You can provide your own workload parameter files by passing the variable
+# through the command line:
+#   --extra-vars "ycsb_workload=workloada" or
+#   --extra-vars "ycsb_workload=/path/to/your/ycsb/workload"
+ycsb_workload: '{{ playbook_dir }}/templates/myworkloada'
+
+# Target number of operations per second for throttling the data insertion
+# during the loading phase. It helps to build a steady LSM tree by allowing
+# more time for compaction. Setting to the value of 0 will disable the throttling.
+target_ops_per_sec_on_load: 3500
+
+# The default maximum number of iteration to evaluate the steady state for
+# each test. For some volatile drive which is harder to get to the steady
+# state, this number can be set to a higher number, e.g. 100.
+maximum_rounds: 25
+
+######################### RocksDB Properties #########################
+
+# You can use your own RocksDB options file on the originating/master machine
+# by passing variables through the command line
+#   --extra-vars "rocksdb_options_file=/path/to/optionsfile"
+# See https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#passing-variables-on-the-command-line
+rocksdb_options_file: '{{ playbook_dir }}/templates/OPTIONS'
+
+# This value needs to be bigger than number of digits in the recordcount
+key_sz_bytes: 16
+
+# This value cannot be less than 13 + len(str(fieldcount - 1))
+# The min_value_sz_bytes would be
+#   max_value_sz_bytes + 1 - len(str(fieldcount - 1))
+# The default value of fieldcount is 1
+max_value_sz_bytes: 4096
+
+######################### Debug Properties ###########################
+
+# Whether to run the YCSB loading phase in the first round only (yes), or in
+# every round (no).
+# This option should be 'yes' for most workloads. For debug purpose, you can
+# try to set to no.
+load_data_once: no
+
+# Whether to run the YCSB loading phase. If set to 'no', the loading phase will
+# be toally skipped without regarding the value of option 'load_data_once'.
+load_data: yes
+
+perf_stats_report_interval_in_secs: 3
+
+######################### Internal Parameters #########################
+
+core_workloads:
+  ['workloada', 'workloadb', 'workloadc', 'workloadd', 'workloade', 'workloadf']
+
+# Since the YCSB RocksDB binding just combines all the fields into a single
+# byte array as the value. Reducing the field counts helps to free up more CPU
+# resources for the I/O path.
+fieldcount: 1
+
+device_mountpoint: /mnt/{{ device_name }}
+
+# create
+rocksdb_data_dir: '{{ device_mountpoint }}/{{ rocksdb_data_dirname }}'
+
+runtimes_dir: '{{ workdir }}/runtimes'
+
+# create
+software_dir: '{{ runtimes_dir }}/software'
+scripts_dir: '{{ runtimes_dir }}/scripts'
+pid_files_dir: '{{ runtimes_dir }}/pid_files'
+
+ycsb_dir: '{{ software_dir }}/YCSB/{{ inventory_hostname }}/{{ device_name }}'
+maven_dir: '{{ software_dir }}/apache-maven-{{ maven_version }}'
+fio_dir: '{{ software_dir }}/fio-fio-{{ fio_version }}'
+rocksdbjni_rmi_dir: '{{ software_dir }}/rocksdbjni-rmi'
+
+# create
+local_tmp_data_dir: '{{ inventory_dir }}/tmp/data'
+
+local_output_dir:
+  "{{ inventory_dir }}/analysis/data/ycsb/output/{{ workload_name }}/\
+  {{ 'localhost' if result_from_local | default(False) else inventory_hostname }}"
+local_sys_usage_info_dir: '{{ local_output_dir }}/sys_usage'
+
+# create
+local_output_device_dir: '{{ local_output_dir }}/devices/{{ device_name }}'
+ycsb_sys_usage_info_dir: '{{ local_sys_usage_info_dir }}/ycsb'
+
+remote_output_dir: '{{ workdir }}/output/{{ workload_name }}/{{ inventory_hostname }}'
+remote_output_device_dir: '{{ remote_output_dir }}/devices/{{ device_name }}'
+remote_sys_usage_info_dir: '{{ remote_output_dir }}/sys_usage'
+
+# create
+remote_nohup_output_dir: '{{ remote_output_device_dir }}/nohup_out'
+rocksdb_sys_usage_info_dir: '{{ remote_sys_usage_info_dir }}/rocksdb'
+storage_sys_usage_info_dir: '{{ remote_sys_usage_info_dir }}/storage'
+
+discard_sectors_script_filename: discard_sectors.sh
+enable_cpufreq_governor_script_filename: enable_cpufreq_governor.sh
+verify_steady_state_script_filename: verify_steady_state.py
+io_accounting_script_filename: io_accounting.sh
+wipc_job_filename: wipc.fio
+
+fio_exec: '{{ fio_dir }}/fio'
+remote_wipc_job_file: '{{ remote_output_device_dir }}/{{ wipc_job_filename }}'
+local_wipc_job_file: '{{ local_output_device_dir }}/{{ wipc_job_filename }}'
+ycsb_workload_file: '{{ local_output_dir }}/{{ workload_name }}'
+rocksdb_remote_input_options_file: '{{ remote_output_device_dir }}/{{ rocksdb_options_file | basename }}'
+
+rocksdb_pid_file: '{{ pid_files_dir }}/rocksdb:{{ device_name }}.pid'
+purge_device_pid_file: '{{ pid_files_dir }}/purge_device:{{ device_name }}.pid'
+wipc_pid_file: '{{ pid_files_dir }}/wipc:{{ device_name }}.pid'
+ycsb_load_pid_file: '{{ pid_files_dir }}/ycsb_load@{{ inventory_hostname }}:{{ device_name }}.pid'
+ycsb_transactions_pid_file: '{{ pid_files_dir }}/ycsb_transactions@{{ inventory_hostname }}:{{ device_name }}.pid'

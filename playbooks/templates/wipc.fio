@@ -1,0 +1,11 @@
+[wipc]
+ioengine=libaio
+group_reporting=1
+filename={{ device_fullname }}
+direct=1
+rw=write
+bssplit=128KB
+numjobs=1
+iodepth=32
+size=75%
+io_size={{ device_sizes[device_name] * 2 }}B

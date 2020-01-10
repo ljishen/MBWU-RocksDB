@@ -1,26 +1,25 @@
 ---
-- name: ({{ notes }}) get the PIDs of the YCSB processes
+- name: ({{ notes }}) get PIDs of YCSB processes
   # this command always exits with 0
-  shell: >
-    set -o pipefail &&
-    ps -eo user,pid,ppid,c,stime,tname,time,args |
-    grep -E [j]ava.+{{ ycsb_workload_file }} |
-    awk '{print $2}'
+  shell: |
+    set -o pipefail
+    ps -eo user,pid,ppid,c,stime,tname,time,args | \
+        grep -E [j]ava.+{{ rocksdb_data_dir }} | \
+        awk '{ print $2 }'
   args:
     executable: /bin/bash
-  loop: "{{ device_names }}"
+  loop: '{{ device_names }}'
   loop_control:
     loop_var: device_name
-  register: comm_ycsb_pid
-  until: comm_ycsb_pid.stdout
-  retries: "{{ 60 * 3 }}"
+  register: comm_ycsb_pids
+  until: comm_ycsb_pids.stdout
+  retries: '{{ 60 * 3 }}'
   delay: 1
   changed_when: False
 
-- name: ({{ notes }}) save the YCSB PIDs
-  shell: echo {{ item.stdout }} > {{ ycsb_pid_file }}
+- name: ({{ notes }}) save YCSB PIDs
+  shell: echo {{ item['stdout'] }} > {{ ycsb_pid_file }}
   vars:
-    device_name: "{{ item.device_name }}"
-  loop: "{{ comm_ycsb_pid.results }}"
+    device_name: "{{ item['device_name'] }}"
+  loop: "{{ comm_ycsb_pids['results'] }}"
   changed_when: True
-...

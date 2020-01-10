@@ -1,26 +1,25 @@
 ---
-- name: ({{ notes }}) backup local file
+- name: "{{ '(' + notes + ') ' if notes is defined else '' }}backup local file"
   copy:
     backup: yes
-    content: ""
-    dest: "{{ local_file }}"
+    content: ''
+    dest: '{{ local_file }}'
     force: yes
-    owner: "{{ lookup('env', 'USER') }}"
+    owner: "{{ hostvars['localhost']['ansible_user'] }}"
   register: copy_res
   delegate_to: localhost
 
-- name: ({{ notes }}) fetch remote file
+- name: "{{ '(' + notes + ') ' if notes is defined else '' }}fetch remote file"
   fetch:
-    dest: "{{ local_file }}"
+    dest: '{{ local_file }}'
     fail_on_missing: yes
     flat: yes
-    src: "{{ remote_file }}"
+    src: '{{ remote_file }}'
 
-- name: ({{ notes }}) clean backup
+- name: "{{ '(' + notes + ') ' if notes is defined else '' }}clean backup"
   shell: |
-    if cmp -s {{ copy_res.backup_file }} {{ local_file }}; then
-      rm --force {{ copy_res.backup_file }}
+    if cmp -s {{ copy_res['backup_file'] }} {{ local_file }}; then
+      rm --force {{ copy_res['backup_file'] }}
     fi
   delegate_to: localhost
   when: copy_res.backup_file is defined
-...

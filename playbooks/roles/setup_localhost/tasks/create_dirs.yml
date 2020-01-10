@@ -1,0 +1,14 @@
+---
+- name: ensure the presence of {{ local_tmp_data_dir }}
+  become: yes
+  file:
+    owner: '{{ ansible_user }}'
+    path: '{{ local_tmp_data_dir }}'
+    state: directory
+
+- name: ensure the presence of sys usage info dir
+  become: yes
+  file:
+    owner: '{{ ansible_user }}'
+    path: '{{ ycsb_sys_usage_info_dir }}'
+    state: directory

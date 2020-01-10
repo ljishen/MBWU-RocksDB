@@ -1,24 +1,26 @@
 ---
-- name: ({{ notes }}) check the existence of the PID file
+- name: ({{ notes }}) check the existence of PID file {{ pid_file }}
   stat:
     get_attributes: no
     get_checksum: no
     get_mime: no
-    path: "{{ pid_file }}"
+    path: '{{ pid_file }}'
   register: stat_res
 
-# This task wait until the related PID does not exist.
+# this task wait until the related PID does not exist.
+# interval and duration are in seconds.
 - name: ({{ notes }}) wait until the process is finished
+  vars:
+    polling_interval: 20
+    single_task_wait_duration: '{{ 60 * 60 * 12 }}'
   shell: |
     if pgrep --pidfile {{ pid_file }} > /dev/null 2>&1; then
         exit 1
-    else
-        rm --force {{ pid_file }}
     fi
-  ignore_errors: yes
+    rm --force {{ pid_file }}
+  failed_when: False
   register: wait_res
   until: wait_res.rc == 0
-  retries: "{{ (single_task_wait_duration | int) // (delay | int) }}"
-  delay: "{{ delay }}"
+  retries: '{{ (single_task_wait_duration | int) // (polling_interval | int) }}'
+  delay: '{{ polling_interval }}'
   changed_when: stat_res.stat.isreg is defined and stat_res.stat.isreg
-...

@@ -1,11 +1,13 @@
 ---
 - name: ({{ notes }}) run workload independent pre-conditioning (wipc) on devices
   become: yes
-  shell: >
-    nohup {{ fio_bin }} {{ remote_wipc_job_file }}
-    --output-format=json+
-    --output {{ remote_wipc_output_file }}
-    < /dev/null > {{ remote_nohup_output_dir }}/wipc_nohup.out 2>&1 &
+  shell: |
+    nohup stdbuf -oL -eL \
+        {{ fio_exec }} {{ remote_wipc_job_file }} \
+        --output-format=json+ \
+        --output {{ remote_wipc_output_file }} \
+        < /dev/null \
+        > {{ remote_nohup_output_dir }}/wipc.nohup 2>&1 &
     echo $! > {{ wipc_pid_file }}
-  changed_when: True
-...
+  register: comm_res
+  changed_when: comm_res.rc == 0

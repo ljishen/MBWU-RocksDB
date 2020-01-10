@@ -1,0 +1,20 @@
+---
+- name: start performance statistics
+  # we use stdbuf to turn off buffering of the output.
+  #   https://linux.die.net/man/1/stdbuf
+  #   https://stackoverflow.com/a/1429973
+  shell: |
+    nohup stdbuf -oL -eL \
+        {{ stat['command'] }} \
+        < /dev/null \
+        > {{ sys_usage_log_file }} 2>&1 &
+    echo $! > {{ sys_usage_pid_file }}
+  environment:
+    S_TIME_FORMAT: ISO
+  vars:
+    performance_stat_name: "{{ stat['name'] }}"
+  loop: '{{ performance_stats }}'
+  loop_control:
+    loop_var: stat
+  register: comm_res
+  changed_when: comm_res.rc == 0

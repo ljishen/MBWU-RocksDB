@@ -4,13 +4,12 @@
 # However, wrapping include_tasks within a block can bypass
 # this restriction.
 - block:
-    - include_tasks: "{{ tasks_filename }}"
+    - include_tasks: '{{ tasks_filename }}'
       vars:
-        current_host: "{{ item }}"
-        current_ansible_user: "{{ hostvars[ansible_host]['ansible_user'] }}"
-        device_name: "{{ device_fullname | basename }}"
+        inventory_hostname: '{{ item }}'
+        ansible_user: "{{ hostvars[item]['ansible_user'] }}"
+        device_name: '{{ device_fullname | basename }}'
       loop: "{{ hostvars[item]['device_fullnames'] }}"
       loop_control:
         loop_var: device_fullname
-  delegate_to: "{{ item }}"
-...
+  delegate_to: '{{ item }}'

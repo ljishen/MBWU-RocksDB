@@ -1,0 +1,21 @@
+---
+- name: ensure the presence of {{ software_dir }}
+  become: yes
+  file:
+    owner: '{{ ansible_user }}'
+    path: '{{ software_dir }}'
+    state: directory
+
+- name: ensure the presence of {{ scripts_dir }}
+  become: yes
+  file:
+    owner: '{{ ansible_user }}'
+    path: '{{ scripts_dir }}'
+    state: directory
+
+- name: ensure the presence of {{ pid_files_dir }}
+  become: yes
+  file:
+    owner: '{{ ansible_user }}'
+    path: '{{ pid_files_dir }}'
+    state: directory
