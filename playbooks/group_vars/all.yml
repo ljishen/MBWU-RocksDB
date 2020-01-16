@@ -7,6 +7,10 @@ rocksdbjni_rmi_version: f81d27d47ba56ea858904f2b3113e12f7211033f
 workdir: /tmp/ycsb-rocksdb
 rocksdb_data_dirname: ycsb-rocksdb-data
 
+# "rocksdb": test with regular RocksDB: https://github.com/facebook/rocksdb
+# "trocksdb": test with TRocksDB developed by Kioxia America: https://github.com/KioxiaAmerica/trocksdb
+rocksdb_profile: rocksdb
+
 # This variable accepts the name of a YCSB core workload or
 # an user-defined workload.
 # You can provide your own workload parameter files by passing the variable
@@ -31,7 +35,7 @@ maximum_rounds: 25
 # by passing variables through the command line
 #   --extra-vars "rocksdb_options_file=/path/to/optionsfile"
 # See https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#passing-variables-on-the-command-line
-rocksdb_options_file: '{{ playbook_dir }}/templates/OPTIONS'
+rocksdb_options_file: '{{ playbook_dir }}/templates/OPTIONS.{{ rocksdb_profile }}'
 
 # This value needs to be bigger than number of digits in the recordcount
 key_sz_bytes: 16

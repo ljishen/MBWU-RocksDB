@@ -21,8 +21,8 @@ git clone https://github.com/ljishen/ycsb-rocksdb.git
 # command is required to run within this dir so that ansible-playbook can see ansible.cfg
 cd ycsb-rocksdb
 
-# Modify the hosts and the corresponding device mountpoint
-vim hosts
+# Add hosts to groups of rocksdb and storage
+vim hosts.yml
 
 # run tests
 ansible-playbook playbooks/main.yml [-v]

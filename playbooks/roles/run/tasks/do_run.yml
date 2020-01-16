@@ -134,7 +134,7 @@
       include_tasks: backup_file.yml
       vars:
         device_name: "{{ item['device_name'] }}"
-        local_file: '{{ local_output_device_dir }}/OPTIONS'
+        local_file: '{{ local_output_device_dir }}/{{ rocksdb_options_file | basename }}'
         remote_file: "{{ item['stdout'] }}"
       loop: "{{ comm_res['results'] }}"
 
