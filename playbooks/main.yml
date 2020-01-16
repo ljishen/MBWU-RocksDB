@@ -221,10 +221,12 @@
   pre_tasks:
     - name: synchronize time with npt
       become: yes
-      command: |
+      shell: |
         service ntp stop
         ntpd -gq
         service ntp start
+      args:
+        warn: no
       register: comm_res
       changed_when: comm_res.rc == 0
 

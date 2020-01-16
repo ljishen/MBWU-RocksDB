@@ -2,6 +2,6 @@
 - name: ({{ notes }}) free slab objects and pagecache
   # See https://www.kernel.org/doc/Documentation/sysctl/vm.txt
   become: yes
-  shell: sync; echo 3 > /proc/sys/vm/drop_caches
+  shell: sync && echo 3 > /proc/sys/vm/drop_caches
   register: comm_res
   changed_when: comm_res.rc == 0
