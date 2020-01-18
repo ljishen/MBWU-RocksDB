@@ -1,0 +1,8 @@
+[submodule "analysis/MBWU-RocksDB-data"]
+	path = analysis/MBWU-RocksDB-data
+	url = https://github.com/ljishen/MBWU-RocksDB-data
+	shallow = true
+[submodule "analysis/MBWU-TRocksDB-data"]
+	path = analysis/MBWU-TRocksDB-data
+	url = https://github.com/ljishen/MBWU-TRocksDB-data
+	shallow = true
