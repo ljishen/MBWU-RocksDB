@@ -4,8 +4,8 @@ fio_version: 3.17
 ycsb_version: f9dbdaf872a4b09dddfba9932bb331a62731f883
 rocksdbjni_rmi_version: f81d27d47ba56ea858904f2b3113e12f7211033f
 
-workdir: /tmp/ycsb-rocksdb
-rocksdb_data_dirname: ycsb-rocksdb-data
+workdir: /tmp/mbwu-rocksdb
+rocksdb_data_dirname: mbwu-rocksdb-data
 
 # "rocksdb": test with regular RocksDB: https://github.com/facebook/rocksdb
 # "trocksdb": test with TRocksDB developed by Kioxia America: https://github.com/KioxiaAmerica/trocksdb
