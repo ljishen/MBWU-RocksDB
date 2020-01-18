@@ -1,4 +1,0 @@
-[submodule "analysis"]
-	path = analysis
-	url = https://github.com/ljishen/ycsb-rocksdb-data
-	shallow = true
