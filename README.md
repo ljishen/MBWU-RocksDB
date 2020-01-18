@@ -1,6 +1,6 @@
-# ycsb-rocksdb
+# MBWU-RocksDB
 
-Ansible Playbook for Running YCSB on RocksDB RMI Server over Disaggregated Storage Devices.
+A playbook to Evaluate RocksDB Performance with MBWU-based methodology.
 
 
 ## Requirements
@@ -16,10 +16,10 @@ Ansible Playbook for Running YCSB on RocksDB RMI Server over Disaggregated Stora
 ## Usage
 
 ```bash
-git clone https://github.com/ljishen/ycsb-rocksdb.git
+git clone https://github.com/ljishen/MBWU-RocksDB.git
 
-# command is required to run within this dir so that ansible-playbook can see ansible.cfg
-cd ycsb-rocksdb
+# run within this dir so that ansible-playbook can see ansible.cfg
+cd MBWU-RocksDB
 
 # Add hosts to groups of rocksdb and storage
 vim hosts.yml
