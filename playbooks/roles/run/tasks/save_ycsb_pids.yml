@@ -4,7 +4,7 @@
   shell: |
     set -o pipefail
     ps -eo user,pid,ppid,c,stime,tname,time,args | \
-        grep -E [j]ava.+{{ rocksdb_data_dir }} | \
+        grep -E [j]ava.+={{ rocksdb_data_dir }}.+={{ ansible_host }} | \
         awk '{ print $2 }'
   args:
     executable: /bin/bash
