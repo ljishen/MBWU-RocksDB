@@ -91,7 +91,7 @@ rocksdbjni_rmi_dir: '{{ software_dir }}/rocksdbjni-rmi'
 local_tmp_data_dir: '{{ inventory_dir }}/tmp/data'
 
 local_output_dir:
-  "{{ inventory_dir }}/analysis/data/ycsb/output/{{ workload_name }}/\
+  "{{ inventory_dir }}/analysis/output/{{ workload_name }}/\
   {{ 'localhost' if result_from_local | default(False) else inventory_hostname }}"
 local_sys_usage_info_dir: '{{ local_output_dir }}/sys_usage'
 
