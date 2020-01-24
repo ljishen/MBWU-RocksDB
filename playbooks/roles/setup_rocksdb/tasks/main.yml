@@ -59,7 +59,7 @@
   register: git_res
 
 - name: build rocksdbjni-rmi
-  command: mvn clean package -P {{ rocksdb_profile }}
+  command: mvn clean package -P{{ rocksdb_profile }} -Drocksdb.version={{ rocksdb_version }}
   args:
     chdir: '{{ rocksdbjni_rmi_dir }}'
   environment:
