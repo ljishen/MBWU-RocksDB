@@ -1,8 +1,8 @@
 ---
 maven_version: 3.6.3
 fio_version: 3.17
-ycsb_version: f9dbdaf872a4b09dddfba9932bb331a62731f883
-rocksdbjni_rmi_version: 8ff9c0ee381dcaeaf11059519e829f22a97e141a
+ycsb_version: 47e0986a575c848db65ccbe9a20fdee2b8239f6e
+rocksdbjni_rmi_version: ab99d068193625afe2fc2b51740956d729af4cbb
 
 workdir: /tmp/mbwu-rocksdb
 rocksdb_data_dirname: mbwu-rocksdb-data
