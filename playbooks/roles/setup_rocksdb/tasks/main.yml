@@ -119,7 +119,7 @@
     mode: u+rx
     src: '{{ io_accounting_script_filename }}'
 
-- name: deploy RocksDB options file
+- name: deploy RocksDB OPTIONS file
   template:
     backup: yes
     dest: '{{ rocksdb_remote_input_options_file }}'

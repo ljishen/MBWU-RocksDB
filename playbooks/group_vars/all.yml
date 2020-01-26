@@ -2,7 +2,7 @@
 maven_version: 3.6.3
 fio_version: 3.17
 ycsb_version: 47e0986a575c848db65ccbe9a20fdee2b8239f6e
-rocksdbjni_rmi_version: ab99d068193625afe2fc2b51740956d729af4cbb
+rocksdbjni_rmi_version: af42ea0362975c3823ade601046a0bcd69b89ca2
 
 workdir: /tmp/mbwu-rocksdb
 rocksdb_data_dirname: mbwu-rocksdb-data
@@ -12,7 +12,8 @@ rocksdb_data_dirname: mbwu-rocksdb-data
 rocksdb_profile: rocksdb
 
 # This parameter is for building the RocksDB RMI server with a specific version of RocksDB.
-# (Not applicable for TRocksDB)
+# Please refer to the repo [ljishen/rocksdbjni-rmi](https://github.com/ljishen/rocksdbjni-rmi#bleeding-edge--master)
+#   to check the availabilities of the versions regarding RocksDB and TRocksDB.
 rocksdb_version: 6.5.3
 
 # This variable accepts the name of a YCSB core workload or
@@ -35,11 +36,11 @@ maximum_rounds: 25
 
 ######################### RocksDB Properties #########################
 
-# You can use your own RocksDB options file on the originating/master machine
+# You can use your own RocksDB OPTIONS file on the originating/master machine
 # by passing variables through the command line
 #   --extra-vars "rocksdb_options_file=/path/to/optionsfile"
 # See https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#passing-variables-on-the-command-line
-rocksdb_options_file: '{{ playbook_dir }}/templates/OPTIONS.{{ rocksdb_profile }}'
+rocksdb_options_file: '{{ playbook_dir }}/templates/OPTIONS.{{ rocksdb_profile }}-v{{ rocksdb_version }}'
 
 # This value needs to be bigger than number of digits in the recordcount
 key_sz_bytes: 16
