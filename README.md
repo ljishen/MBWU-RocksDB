@@ -6,10 +6,11 @@ A playbook to Evaluate RocksDB Performance with MBWU-based methodology.
 ## Requirements
 
 - Control Node
-  - ansible >= 2.7.9
+  - ansible >= 2.9.0
   - python-apt or python3-apt or aptitude
 
 - Managed Nodes ([rocksdb, storage])
+  - apt-transport-https
   - python-apt or python3-apt or aptitude
 
 
