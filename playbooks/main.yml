@@ -221,6 +221,7 @@
   pre_tasks:
     - name: synchronize time with npt
       become: yes
+      throttle: 1
       shell: |
         service ntp stop
         ntpd -gq
