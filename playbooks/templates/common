@@ -8,7 +8,7 @@ fieldcount={{ fieldcount }}
 #                  bytes of the length of the field value (4 bytes) +
 #                  bytes of the field value (this is the fieldlength))
 #                 * fieldcount
-# https://github.com/ljishen/YCSB/blob/master/rocksdb/src/main/java/com/yahoo/ycsb/db/rocksdb/RocksDBClient.java#L326
+# https://github.com/ljishen/YCSB/blob/89607df576e07fcc104339c9c41014ceba96472a/rocksdb/src/main/java/site/ycsb/db/rocksdb/RocksDBClient.java#L212
 fieldlength={{ max_value_sz_bytes - 4 * 2 - (5 + (fieldcount  - 1) | string | length) }}
 
 # For example for row 5, with zeropadding=1 you get 'user5' key and with
@@ -17,8 +17,7 @@ fieldlength={{ max_value_sz_bytes - 4 * 2 - (5 + (fieldcount  - 1) | string | le
 # In Java each ASCII character is encoded to 1 byte using UTF-8 charset.
 #
 # See
-# https://github.com/ljishen/YCSB/blob/master/rocksdb/src/main/java/com/yahoo/ycsb/db/rocksdb/RocksDBClient.java
-# https://github.com/ljishen/YCSB/blob/master/core/src/main/java/com/yahoo/ycsb/workloads/CoreWorkload.java
+# https://github.com/ljishen/YCSB/blob/89607df576e07fcc104339c9c41014ceba96472a/core/src/main/java/site/ycsb/workloads/CoreWorkload.java#L517
 zeropadding={{ key_sz_bytes - 4 }}
 
 # This has to be ordered to make the key size fixed
