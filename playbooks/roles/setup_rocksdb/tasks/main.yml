@@ -108,7 +108,7 @@
     limit_item: nofile
     limit_type: soft
     # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/5/html/tuning_and_optimizing_red_hat_enterprise_linux_for_oracle_9i_and_10g_databases/chap-oracle_9i_and_10g_tuning_guide-setting_shell_limits_for_the_oracle_user
-    value: 63536
+    value: "63536"
 
 - name: copy the {{ io_accounting_script_filename }} script to the remote
   copy:
