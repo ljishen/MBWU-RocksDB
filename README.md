@@ -46,6 +46,8 @@ ansible-playbook playbooks/main.yml [-v]
 # $ ansible-playbook playbooks/main.yml -v \
 #       --extra-vars "ycsb_workload=/path/to/your/ycsb/workload rocksdb_options_file=/path/to/your/optionsfile"
 #
+# The final output dir is: {{ inventory_dir }}/analysis/output/{{ workload_name }}
+#
 ```
 
 ## Data Repositories
