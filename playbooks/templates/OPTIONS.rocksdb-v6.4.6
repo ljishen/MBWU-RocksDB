@@ -5,11 +5,10 @@
 #
 
 [Version]
-  rocksdb_version=6.5.3
+  rocksdb_version=6.4.6
   options_file_version=1.1
 
 [DBOptions]
-  write_dbid_to_manifest=false
   avoid_unnecessary_blocking_io=false
   two_write_queues=false
   allow_ingest_behind=false
@@ -75,7 +74,6 @@
   use_direct_reads=false
   delayed_write_rate=16777216
   allow_fallocate=true
-  max_write_batch_group_size_bytes=1048576
   keep_log_file_num=1000
   allow_mmap_reads=false
   max_log_file_size=0
@@ -117,7 +115,6 @@
   max_compaction_bytes={{ 25 * 64 * 1024 * 1024 }}
   compaction_options_universal={allow_trivial_move=false;stop_style=kCompactionStopStyleTotalSize;compression_size_percent=-1;max_size_amplification_percent=200;max_merge_width=4294967295;min_merge_width=2;size_ratio=1;}
   memtable_prefix_bloom_size_ratio=0.000000
-  max_write_buffer_size_to_maintain=0
   hard_pending_compaction_bytes_limit={{ 256 * 1024 * 1024 * 1024 }}
   ttl=0
   table_factory=BlockBasedTable
@@ -164,7 +161,7 @@
   flush_block_policy_factory=FlushBlockBySizePolicyFactory
 
 
-[CFOptions "usertable"]
+[CFOptions "myusertable"]
   sample_for_compression=0
   compaction_pri=kMinOverlappingRatio
   merge_operator=nullptr
@@ -198,7 +195,6 @@
   max_compaction_bytes={{ 25 * 64 * 1024 * 1024 }}
   compaction_options_universal={allow_trivial_move=false;stop_style=kCompactionStopStyleTotalSize;compression_size_percent=-1;max_size_amplification_percent=200;max_merge_width=4294967295;min_merge_width=2;size_ratio=1;}
   memtable_prefix_bloom_size_ratio=0.000000
-  max_write_buffer_size_to_maintain=0
   hard_pending_compaction_bytes_limit={{ 256 * 1024 * 1024 * 1024 }}
   ttl=0
   table_factory=BlockBasedTable
@@ -217,7 +213,7 @@
   disable_auto_compactions=false
   report_bg_io_stats=false
 
-[TableOptions/BlockBasedTable "usertable"]
+[TableOptions/BlockBasedTable "myusertable"]
   pin_top_level_index_and_filter=true
   enable_index_compression=true
   read_amp_bytes_per_bit=8589934592
@@ -243,4 +239,3 @@
   cache_index_and_filter_blocks=false
   hash_index_allow_collision=true
   flush_block_policy_factory=FlushBlockBySizePolicyFactory
-
